@@ -1603,13 +1603,21 @@ svg { display: block; }
 
   /* ---------- reset everything (with confirmation) ---------- */
   const cfEl = $('confirm');
-  const openConfirm = () => { cfEl.hidden = false; $('cfNo').focus(); };
+  const CF_RESET = { title: '정말 초기화할까요?', text: '단계 기록, 코인, 아이템, 털실 방, 출석·룰렛 기록이 모두 삭제되고 처음부터 다시 시작해요. 삭제하면 되돌릴 수 없어요.', yes: '모두 삭제' };
+  let cfOnYes = null;
+  const openConfirm = cfg => {
+    cfg = cfg || CF_RESET;
+    $('cfTitle').textContent = cfg.title; $('cfText').textContent = cfg.text; $('cfYes').textContent = cfg.yes;
+    cfOnYes = cfg.onYes || null;
+    cfEl.hidden = false; $('cfNo').focus();
+  };
   const closeConfirm = () => { cfEl.hidden = true; };
   $('resetBtn').addEventListener('click', () => { if (busy && !ended) return; S('click'); openConfirm(); });
   $('cfNo').addEventListener('click', () => { S('click'); closeConfirm(); });
   cfEl.addEventListener('click', e => { if (e.target === cfEl) closeConfirm(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !cfEl.hidden) closeConfirm(); });
   $('cfYes').addEventListener('click', () => {
+    if (cfOnYes) { const f = cfOnYes; cfOnYes = null; S('click'); closeConfirm(); f(); return; }
     resetting = true;
     try { localStorage.removeItem(STORE); } catch (e) { /* ignore */ }
     try { A.stopMusic(); } catch (e) { /* ignore */ }
@@ -2115,7 +2123,12 @@ svg { display: block; }
     }
   });
   $('evBack').addEventListener('click', () => { S('click'); closeEvent(); });
-  $('itemEvent').addEventListener('click', () => { if (!over.hidden || (busy && !ended)) return; S('click'); openMap(); });
+  $('itemEvent').addEventListener('click', () => {
+    if (!over.hidden || (busy && !ended)) return;
+    S('click');
+    if (ended) { openMap(); return; }
+    openConfirm({ title: '게임을 그만두시겠어요?', text: '지금 하던 단계는 저장되지 않고, 다시 하면 처음부터 시작해요.', yes: '그만하기', onYes: openMap });
+  });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !evEl.hidden && !spinning) { closeEvent(); e.stopImmediatePropagation(); } });
   evWeek(); persist(); evDotSync();
 
