@@ -779,7 +779,7 @@ svg { display: block; }
     const vol = v => (typeof v === 'number' && isFinite(v) ? Math.max(0, Math.min(100, v)) : 100) / 100;
     function applyVol() {
       if (!ctx) return;
-      try { sfxBus.gain.setTargetAtTime(0.55 * vol(save.sfxVol), ctx.currentTime, 0.02); musMaster.gain.setTargetAtTime(0.32 * vol(save.musVol), ctx.currentTime, 0.02); } catch (e) { /* ignore */ }
+      try { sfxBus.gain.setTargetAtTime(1.0 * vol(save.sfxVol), ctx.currentTime, 0.02); musMaster.gain.setTargetAtTime(0.62 * vol(save.musVol), ctx.currentTime, 0.02); } catch (e) { /* ignore */ }
     }
     function ensure() {
       if (ctx) { if (ctx.state !== 'running') kickResume(); return ctx; }
@@ -787,9 +787,11 @@ svg { display: block; }
       if (!AC) return null;
       try { ctx = new AC(); } catch (e) { return null; }
       ctx.onstatechange = flush;
-      const master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
-      sfxBus = ctx.createGain(); sfxBus.gain.value = 0.55 * vol(save.sfxVol); sfxBus.connect(master);
-      musMaster = ctx.createGain(); musMaster.gain.value = 0.32 * vol(save.musVol); musMaster.connect(master); musBus = musMaster;
+      const master = ctx.createGain(); master.gain.value = 0.9;
+      const lim = ctx.createDynamicsCompressor(); lim.threshold.value = -8; lim.knee.value = 10; lim.ratio.value = 8; lim.attack.value = 0.003; lim.release.value = 0.2;
+      master.connect(lim); lim.connect(ctx.destination);
+      sfxBus = ctx.createGain(); sfxBus.gain.value = 1.0 * vol(save.sfxVol); sfxBus.connect(master);
+      musMaster = ctx.createGain(); musMaster.gain.value = 0.62 * vol(save.musVol); musMaster.connect(master); musBus = musMaster;
       const delay = ctx.createDelay(1); delay.delayTime.value = 0.34;
       const fb = ctx.createGain(); fb.gain.value = 0.38;
       wet = ctx.createGain(); wet.gain.value = 0;
