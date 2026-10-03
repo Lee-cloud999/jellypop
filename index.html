@@ -173,6 +173,8 @@ svg { display: block; }
 .bar u { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--paper); opacity: 0.9; }
 .score { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stars { display: flex; gap: 2px; }
+.prog .stars, .bar u { display: none; }
+.starhint { margin-top: -6px; font-size: 14px; color: var(--muted); }
 .bump { animation: bump 0.25s ease-out; }
 @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
 
@@ -1129,7 +1131,9 @@ svg { display: block; }
       moves = n >= 26 ? 22 : 21;
     }
     const t2 = Math.round((700 + n * 50) / 50) * 50;
-    return { moves, tier, goals: g, t2, t3: Math.round(t2 * 1.5 / 50) * 50 };
+    // 별: 남은 이동 수로 결정 (쉬운 단계일수록 3개 기준이 높아요)
+    const f3 = tier === 0 ? 0.4 : tier === 1 ? 0.35 : 0.3, f2 = tier === 0 ? 0.2 : tier === 1 ? 0.15 : 0.12;
+    return { moves, tier, goals: g, t2, t3: Math.round(t2 * 1.5 / 50) * 50, s3: Math.ceil(moves * f3), s2: Math.ceil(moves * f2) };
   }
   const goalsMet = () => goals.every(g => g.got >= g.n);
 
@@ -1160,10 +1164,7 @@ svg { display: block; }
     elTitle.textContent = level + '단계 도전';
     elGoals.innerHTML = goals.map(goalHtml).join('');
     goals.forEach(g => { g.pulse = false; });
-    elBar.style.width = Math.min(100, score / cfg.t3 * 100) + '%';
-    elMk2.style.left = (cfg.t2 / cfg.t3 * 100) + '%';
-    const s = (goalsMet() ? 1 : 0) + (score >= cfg.t2 ? 1 : 0) + (score >= cfg.t3 ? 1 : 0);
-    elStars.innerHTML = starsHtml(s, 20);
+    elBar.style.width = Math.min(100, score / Math.max(cfg.t3, save.best[level] || 0) * 100) + '%';
     roomDotSync();
     $('hammerBadge').textContent = save.hammers;
     $('movesBadge').textContent = save.mv;
@@ -1501,7 +1502,8 @@ svg { display: block; }
     clearHint();
     const bonus = moves * 30;
     score += bonus;
-    const stars = 1 + (score >= cfg.t2 ? 1 : 0) + (score >= cfg.t3 ? 1 : 0);
+    const movesLeft = moves;
+    const stars = movesLeft >= cfg.s3 ? 3 : movesLeft >= cfg.s2 ? 2 : 1;
     const prevStars = save.stars[level] || 0;
     const first = !save.stars[level];
     const reward = 30 + stars * 20 + (first ? 30 : 0);
@@ -1525,7 +1527,8 @@ svg { display: block; }
     showOver(
       '<h3 class="clear">' + (level >= MAX_LEVEL ? '모든 단계 클리어!' : '클리어!') + '</h3><div class="stars win">' + starsHtml(stars, 44) + '</div>' +
       '<div class="big">' + fmt(score) + '점</div>' +
-      '<p>남은 이동 보너스 +' + fmt(bonus) + '</p>' +
+      '<p>남은 이동 ' + movesLeft + '개 · 보너스 +' + fmt(bonus) + '</p>' +
+      (stars < 3 ? '<p class="starhint">별 3개는 이동 ' + cfg.s3 + '개 이상 남기면 받아요</p>' : '') +
       '<div class="rw"><span>코인 +' + reward + (first ? ' (첫 클리어 +30)' : '') + '</span>' + gifts.map(g => '<span>' + g + '</span>').join('') + '</div>' +
       '<div class="row"><button class="btn primary" type="button" data-act="next">' + (level >= MAX_LEVEL ? '단계 고르기' : '다음 단계') + '</button><button class="btn" type="button" data-act="retry">다시 하기</button></div>'
     );
