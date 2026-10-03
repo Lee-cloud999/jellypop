@@ -1527,7 +1527,7 @@ svg { display: block; }
       '<div class="big">' + fmt(score) + '점</div>' +
       '<p>남은 이동 보너스 +' + fmt(bonus) + '</p>' +
       '<div class="rw"><span>코인 +' + reward + (first ? ' (첫 클리어 +30)' : '') + '</span>' + gifts.map(g => '<span>' + g + '</span>').join('') + '</div>' +
-      '<div class="row"><button class="btn primary" type="button" data-act="next">' + (level >= MAX_LEVEL ? '단계 고르기' : '다음 단계') + '</button><button class="btn" type="button" data-act="retry">다시 하기</button><button class="btn" type="button" data-act="shop">상점</button><button class="btn" type="button" data-act="room">털실 방</button></div>'
+      '<div class="row"><button class="btn primary" type="button" data-act="next">' + (level >= MAX_LEVEL ? '단계 고르기' : '다음 단계') + '</button><button class="btn" type="button" data-act="retry">다시 하기</button></div>'
     );
   }
 
