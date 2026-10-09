@@ -1231,7 +1231,7 @@ svg { display: block; }
       moves += hasIce && hasCrate ? 5 : hasIce ? 3 : 2;
     }
     let keyN = 0, gooN = 0;
-    if (KEY_LV.indexOf(n) >= 0) { g.splice(1); keyN = 2 + Math.floor(n / 14); g.push({ k: 'k', n: keyN }); moves += 3; }
+    if (KEY_LV.indexOf(n) >= 0) { g.splice(1); g.forEach(x => { if (x.k === 'c') x.n = Math.max(4, Math.round(x.n * 0.7)); }); keyN = 2 + Math.floor(n / 20); g.push({ k: 'k', n: keyN }); moves += 7; }
     if (GOO_LV.indexOf(n) >= 0) { g.splice(1); gooN = 2 + Math.floor(n / 12); g.push({ k: 'g', n: gooN }); moves += 2; }
     const t2 = Math.round((700 + n * 50) / 50) * 50;
     // 별: 남은 이동 수로 결정 (쉬운 단계일수록 3개 기준이 높아요)
