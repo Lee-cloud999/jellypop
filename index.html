@@ -1901,7 +1901,9 @@ svg { display: block; }
       if (activated.size) S([...activated].some(t => t.special === 'bomb' || t.special === 'rainbow') ? 'boom' : 'sweep');
       if (survivors.length) S('make');
       if (survivors.some(s => s.sp === 'wing') && !save.seenWing) { save.seenWing = 1; persist(); setTimeout(() => { if (!ended) plainBubble('<b>날개 젤리</b>가 생겼어요!<br>눌러 보세요. 위아래 젤리가 터지고<br>목표에 도움이 되는 젤리가 하나 더 사라져요', 8000); }, 900); }
-      if (survivors.some(s => s.sp === 'rainbow') && !save.seenRb) { save.seenRb = 1; persist(); showToast('무지개 젤리! 아무 젤리와 바꾸면 그 색이 모두 사라져요'); }
+      if (survivors.some(s => s.sp === 'row' || s.sp === 'col') && !save.seenStripeTip) ctxPending = 'stripe';
+      if (survivors.some(s => s.sp === 'rainbow') && !save.seenRbTip) ctxPending = 'rainbow';
+      if (survivors.some(s => s.sp === 'rainbow') && !save.seenRb) { save.seenRb = 1; persist(); }
       if (goals.filter(g => g.got >= g.n).length > doneBefore) S('goal');
       goals.forEach((g, i) => { g.pulse = !prev[i] && g.got >= g.n; });
       if (set.size) {
@@ -2096,6 +2098,39 @@ svg { display: block; }
       if (kind === 'pin' || kind === 'timer') grid.flat().forEach(t => { if (t && (kind === 'pin' ? t.pin : t.timer)) t.el.classList.add('hint'); });
     }
   }
+  let ctxPending = null;
+  // N개를 한 줄로 맞추는 한 수 (줄무늬 4개 / 무지개 5개 시연)
+  function lineDemoFind(len) {
+    const cands = [];
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) for (const [dr, dc] of [[0, 1], [1, 0]]) {
+      const r2 = r + dr, c2 = c + dc;
+      if (r2 >= R || c2 >= C) continue;
+      const a = grid[r][c], b = grid[r2][c2];
+      if (!a || !b || isFixed(a) || isFixed(b) || a.special || b.special || a.key || b.key) continue;
+      swapGrid(r, c, r2, c2);
+      const ok = lineLen(r, c) >= len || lineLen(r2, c2) >= len;
+      swapGrid(r, c, r2, c2);
+      if (ok) cands.push([r, c, r2, c2]);
+    }
+    return cands.length ? cands[rnd(cands.length)] : null;
+  }
+  // 줄무늬(10단계)·무지개(16단계) 만드는 법: 시작하자마자 손가락으로 보여줘요
+  function lessonDemo(len) {
+    if (ended || busy || !cover.hidden || !lvEl.hidden || !over.hidden) return;
+    const h = lineDemoFind(len);
+    const txt = len === 4 ? '같은 색 <b>4개</b>를 한 줄로 맞추면<br><b>줄무늬 젤리</b>가 생겨요!<br><small>줄무늬는 옆 젤리와 바꾸면 한 줄이 터져요</small>' : '같은 색 <b>5개</b>를 한 줄로 맞추면<br><b>무지개 젤리</b>가 생겨요!<br><small>무지개는 아무 젤리와 바꾸면 그 색이 모두 사라져요</small>';
+    if (h) fingerDemo(h, txt, null, 6500); else plainBubble(txt, 7500);
+  }
+  // 특수 젤리를 처음 만들었을 때: 어떻게 쓰는지 손가락으로 보여줘요
+  function specialTip(kind) {
+    const t = grid.flat().find(x => x && (kind === 'stripe' ? (x.special === 'row' || x.special === 'col') : x.special === 'rainbow'));
+    if (!t) return;
+    const nb = [[0, 1], [1, 0], [0, -1], [-1, 0]].map(([dr, dc]) => grid[t.r + dr] && grid[t.r + dr][t.c + dc]).find(x => x && !isFixed(x) && !x.key);
+    if (kind === 'stripe') save.seenStripeTip = 1; else save.seenRbTip = 1;
+    persist();
+    const txt = kind === 'stripe' ? '<b>줄무늬 젤리</b>가 생겼어요!<br>옆 젤리와 바꾸면<br>한 줄이 쓱 터져요' : '<b>무지개 젤리</b>가 생겼어요!<br>아무 젤리와 바꾸면<br>그 색 젤리가 모두 사라져요';
+    if (nb) fingerDemo([t.r, t.c, nb.r, nb.c], txt, null, 6500); else plainBubble(txt, 7000);
+  }
   // 날개 젤리 시연: 같은 색 4개를 2×2로 모으는 한 수
   function wingDemoFind() {
     const cands = [];
@@ -2113,6 +2148,7 @@ svg { display: block; }
   }
   function ctxAfterMove() {
     if (ended || busy || !over.hidden || !cover.hidden || !lvEl.hidden || !cfg) return;
+    if (ctxPending) { const k = ctxPending; ctxPending = null; if (!fingerOn) { specialTip(k); return; } }
     const sh = k => { ctxShown[k] = 1; };
     if (level === 2 && madeMoves >= 1 && !ctxShown.ham) {
       sh('ham');
@@ -2397,6 +2433,7 @@ svg { display: block; }
     const can = save.coins >= CONT.cost;
     showOver(
       '<h3>아쉬워요</h3><p>' + (msg || '이동 횟수를 다 썼어요.') + '</p>' +
+      '<p style="margin:0;font-size:14px;opacity:.85">하트 1개를 잃었어요 · 남은 하트 ' + save.hearts + '개</p>' +
       '<div class="coinline" style="font-size:20px">' + icoImg('coin', 22) + ' 보유 ' + fmt(save.coins) + '</div>' +
       (noCont ? '' : '<div class="row"><button class="btn primary wide" type="button" data-act="more"' + (can ? '' : ' disabled') + ' style="min-height:56px;font-size:20px;justify-content:center">이어하기 · 이동 +' + CONT.moves + ' &nbsp;' + icoImg('coin', 20) + ' ' + CONT.cost + '</button></div>') +
       (noCont || can ? '' : '<p style="margin:0;font-size:13px">코인이 부족해요. 상점에서 코인을 채울 수 있어요.</p>') +
@@ -2541,8 +2578,10 @@ svg { display: block; }
     if (save.hearts <= 0) { showNoHeart(n); return false; }
     delete over.dataset.noheart; setupLevel(n); return true; // 시작하려면 하트가 1개 이상 있어야 해요 (소진은 패배·다시하기 때만)
   }
+  let pendingHeartTip = false;
   function spendHeart() {
     if (save.hearts <= 0) return;
+    if (!save.heartTip) pendingHeartTip = true;
     if (save.hearts >= HEART_MAX) save.hAt = Date.now();
     save.hearts--; persist(); renderHearts();
   }
@@ -2679,6 +2718,7 @@ svg { display: block; }
     else if (act === 'shufok') { hideOver(); bShuffle.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'mvok') { hideOver(); bMoves.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'hamok') { hideOver(); bHammer.classList.add('tutglow'); if (!ended) scheduleHint(); }
+    else if (act === 'heartok') { hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'bombok') { hideOver(); if (!ended) { scheduleHint(); setTimeout(bombDemo, 400); } }
     else if (act === 'iceok') { save.seenIce = 1; persist(); hideOver(); if (!ended) { scheduleHint(); setTimeout(() => gimmickDemo('ice'), 400); } }
     else if (act === 'heartwait') { delete over.dataset.noheart; hideOver(); openLevels(); }
@@ -2814,14 +2854,23 @@ svg { display: block; }
     newBoard();
     if (level === 3) for (let t = 0; t < 60 && !bombDemoFind(); t++) newBoard(); // 시연할 T자 한 수가 있는 판으로
     if (level === 1) for (let t = 0; t < 40 && !(hintDir('v') && hintDir('h')); t++) newBoard(); // 시연할 세로·가로 한 수가 모두 있는 판으로
+    if (level === 10) for (let t = 0; t < 60 && !lineDemoFind(4); t++) newBoard(); // 줄무늬 시연용: 4개 한 줄이 되는 한 수가 있는 판으로
+    if (level === 16) for (let t = 0; t < 80 && !lineDemoFind(5); t++) newBoard(); // 무지개 시연용: 5개 한 줄
     goals.forEach(g => { if (g.k === 'i') g.n = grid.flat().filter(t => t && t.frozen).length; if (g.k === 'x') g.n = grid.flat().filter(t => t && t.crate && !t.pin).length; if (g.k === 'y') g.n = grid.flat().filter(t => t && t.yarn).length; if (g.k === 'k') g.n = grid.flat().filter(t => t && t.key).length; if (g.k === 'g') g.n = gooCount(); });
     updateHud(false);
     showToast(level + '단계 · ' + TIER_NAME[tierOf(level)] + (level === ICE_LV[0] ? ' · 얼음 칸이 나왔어요!' : level === CRATE_LV[0] ? ' · 상자가 나왔어요!' : level === KEY_LV[0] ? ' · 열쇠 젤리를 맨 아래로 내려요!' : level === GOO_LV[0] ? ' · 얼룩이 나왔어요! 방치하면 번져요' : R * C > prevCells && grid.length ? ' · 보드가 커졌어요!' : ''));
     scheduleHint();
     // 큰 안내창 대신: 1단계·3단계는 시작하자마자 손가락 시연, 나머지는 상황에 맞춰(ctxAfterMove) 짧은 말풍선으로 알려줘요
-    if (cover.hidden && lvEl.hidden) {
+    if (pendingHeartTip && cover.hidden && lvEl.hidden) {
+      pendingHeartTip = false; save.heartTip = 1; persist(); clearHint();
+      showOver('<h3>하트 안내</h3><p>하트는 <b>5개</b>까지 모여요.<br>게임에서 지거나 <b>다시하기</b>를 누르면 1개가 줄어요.<br>잘 클리어하면 줄지 않아요!</p>' +
+        '<p>하트는 <b>20분마다 1개</b>씩 다시 채워져요.<br>하트가 없으면 위쪽 <b>+</b> 버튼에서 코인으로 살 수 있어요.</p>' +
+        '<div class="row"><button class="btn primary" type="button" data-act="heartok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
+    } else if (cover.hidden && lvEl.hidden && over.hidden) {
       if (level === 1) setTimeout(() => showFinger('v'), 800);
       else if (level === 3) setTimeout(bombDemo, 900);
+      else if (level === 10) setTimeout(() => lessonDemo(4), 1000);
+      else if (level === 16) setTimeout(() => lessonDemo(5), 1000);
     }
   }
 
