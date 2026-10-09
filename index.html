@@ -176,7 +176,7 @@ svg { display: block; }
 }
 .moves small { font-size: 11px; font-weight: 700; line-height: 1.2; }
 .moves b { font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
-.prog { display: flex; align-items: center; gap: 10px; }
+.prog { display: none !important; align-items: center; gap: 10px; }
 .bar { position: relative; flex-grow: 1; height: 14px; border-radius: 7px; background: var(--stitch); overflow: hidden; }
 .bar i {
   display: block; height: 100%; width: 0; border-radius: 7px; transition: width 0.3s ease;
@@ -193,7 +193,7 @@ svg { display: block; }
 .boardwrap { padding: 7px; display: flex; justify-content: center; margin-inline: -8px; border-radius: 26px; outline-offset: -4px; }
 .field {
   position: relative;
-  width: min(100%, max(240px, calc((100dvh - 372px) * var(--ar, 1))));
+  width: min(100%, max(240px, calc((100dvh - 342px) * var(--ar, 1))));
   aspect-ratio: var(--ar, 1);
   border-radius: 16px;
   overflow: hidden;
