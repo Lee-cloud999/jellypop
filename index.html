@@ -1470,7 +1470,10 @@ svg { display: block; }
     field.appendChild(el); setTimeout(() => el.remove(), 1050);
   }
   const reduceMotionFx = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-  function tallyKind(k) { goals.forEach(g => { if (g.k === k) g.got++; }); }
+  function tallyKind(k) {
+    goals.forEach(g => { if (g.k === k) g.got++; });
+    if (k === 'i') praise('ice', '얼음을 깼어요!'); else if (k === 'x') praise('crate', '상자를 부쉈어요!'); else if (k === 'g') praise('goo', '얼룩을 지웠어요!'); else if (k === 'k') praise('key', '열쇠를 얻었어요!');
+  }
   // 얼음에 갇힌 젤리: 옆에서 터뜨리면 한 겹씩 깨져요 (겹이 다 깨지면 평범한 젤리가 돼요)
   function hitFrozen(t) {
     t.frozen--;
@@ -1679,6 +1682,7 @@ svg { display: block; }
       const runs = findRuns();
       if (!runs.length && !forced.length) break;
       chain++;
+      if (level === 1 && chain === 1) praise('first', '멋져요! 첫 매치!');
 
       const set = new Set();
       runs.forEach(run => run.cells.forEach(t => set.add(t)));
@@ -1819,24 +1823,67 @@ svg { display: block; }
     }
     return cand.length ? cand[rnd(cand.length)] : null;
   }
-  function showFinger(dir) {
-    if (level !== 1 || ended || busy || !cover.hidden || !lvEl.hidden) return;
-    dir = dir || 'v';
-    const h = hintDir(dir); if (!h) { if (dir === 'v') showFinger('h'); return; }
+  function fingerDemo(h, html, next, dur) {
     hideFinger(); fingerOn = true;
     const [r1, c1, r2, c2] = h;
-    const vert = c1 === c2;
     const f = document.createElement('div'); f.className = 'finger'; f.textContent = '👆';
     f.style.animationIterationCount = '1';
     f.style.setProperty('--x1', (c1 + 0.5) * cell + 'px'); f.style.setProperty('--y1', (r1 + 0.5) * cell + 'px');
     f.style.setProperty('--x2', (c2 + 0.5) * cell + 'px'); f.style.setProperty('--y2', (r2 + 0.5) * cell + 'px');
-    const b = document.createElement('div'); b.className = 'fbub';
-    b.innerHTML = (vert ? '위아래로 바꿔서' : '옆으로 바꿔서') + '<br>같은 색 <b>3개</b>를 맞춰 보세요!';
+    const b = document.createElement('div'); b.className = 'fbub'; b.innerHTML = html;
     if (Math.max(r1, r2) < R / 2) { b.style.top = 'auto'; b.style.bottom = '8px'; } // 설명 말풍선은 손가락 반대편에
     field.appendChild(b); field.appendChild(f);
     grid[r1][c1].el.classList.add('hint'); grid[r2][c2].el.classList.add('hint');
-    const tok = ++fingerTok; // 애니메이션 이벤트에 기대지 않고 타이머로 다음 시연으로 넘어가요
-    setTimeout(() => { if (!fingerOn || tok !== fingerTok) return; if (vert) showFinger('h'); else { hideFinger(); scheduleHint(); } }, vert ? 2600 : 2300); // 세로 한 번 → 가로 한 번 → 끝
+    const tok = ++fingerTok; // 애니메이션 이벤트에 기대지 않고 타이머로 다음으로 넘어가요
+    setTimeout(() => { if (!fingerOn || tok !== fingerTok) return; if (next) next(); else { hideFinger(); scheduleHint(); } }, dur || 2400);
+  }
+  function showFinger(dir) {
+    if (level !== 1 || ended || busy || !cover.hidden || !lvEl.hidden) return;
+    dir = dir || 'v';
+    const h = hintDir(dir); if (!h) { if (dir === 'v') showFinger('h'); return; }
+    const vert = h[1] === h[3];
+    fingerDemo(h, (vert ? '위아래로 바꿔서' : '옆으로 바꿔서') + '<br>같은 색 <b>3개</b>를 맞춰 보세요!', vert ? () => showFinger('h') : null, vert ? 2600 : 2300); // 세로 한 번 → 가로 한 번 → 끝
+  }
+  // 기믹 시연: 얼음·상자·얼룩은 옆에서 터지는 수, 열쇠는 열쇠 바로 아래가 터지는 수를 찾아서 보여줘요
+  function gimmickDemoFind(kind) {
+    const isT = t => t && (kind === 'ice' ? t.frozen : kind === 'crate' ? t.crate : kind === 'goo' ? t.goo : false);
+    const cands = [];
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) for (const [dr, dc] of [[0, 1], [1, 0]]) {
+      const r2 = r + dr, c2 = c + dc;
+      if (r2 >= R || c2 >= C) continue;
+      const a = grid[r][c], b = grid[r2][c2];
+      if (!a || !b || isFixed(a) || isFixed(b) || a.special || b.special || a.key || b.key) continue;
+      if (!canSwapMatch(r, c, r2, c2)) continue;
+      swapGrid(r, c, r2, c2);
+      const runs = findRuns();
+      const pos = new Map();
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) if (grid[y][x]) pos.set(grid[y][x], [y, x]);
+      let hit = false;
+      runs.forEach(run => run.cells.forEach(t => {
+        const [y, x] = pos.get(t);
+        if (kind === 'key') { if (grid[y - 1] && grid[y - 1][x] && grid[y - 1][x].key) hit = true; }
+        else if (isT(t)) hit = true;
+        else [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([ay, ax]) => { if (grid[y + ay] && isT(grid[y + ay][x + ax])) hit = true; });
+      }));
+      swapGrid(r, c, r2, c2);
+      if (hit) cands.push([r, c, r2, c2]);
+    }
+    return cands.length ? cands[rnd(cands.length)] : null;
+  }
+  function gimmickDemo(kind) {
+    if (ended || busy || !cover.hidden || !lvEl.hidden) return;
+    const h = gimmickDemoFind(kind); if (!h) return;
+    const txt = { ice: '이렇게 바꾸면 옆의 <b>얼음</b>이 깨져요!', crate: '이렇게 바꾸면 옆의 <b>상자</b>가 맞아요!', goo: '이렇게 바꾸면 <b>얼룩</b>이 지워져요!', key: '이렇게 바꾸면 <b>열쇠</b>가 아래로 내려가요!' }[kind];
+    fingerDemo(h, txt, null, 2600);
+  }
+  // 처음 해 봤을 때 칭찬 + 작은 코인 보상
+  function praise(key, msg, coins) {
+    if (!save.pr || typeof save.pr !== 'object') save.pr = {};
+    if (save.pr[key]) return;
+    save.pr[key] = 1; coins = coins || 10; save.coins += coins; persist(); updateHud(false);
+    showToast(msg + ' 코인 +' + coins); S('goal');
+    const x = field.clientWidth / 2, y = field.clientHeight / 2;
+    FX.burst(x, y, '#FFD25E', 26, 260); FX.ring(x, y, '#FFFFFF', cell * 2.2);
   }
   function clearHint() { clearTimeout(hintTimer); field.querySelectorAll('.tile.hint').forEach(el => el.classList.remove('hint')); }
   function scheduleHint() {
@@ -1892,7 +1939,7 @@ svg { display: block; }
   async function useHammer(t) {
     if (busy || ended) return;
     if (t.key) { showToast('열쇠는 망치로 부술 수 없어요'); return; }
-    bHammer.classList.remove('tutglow');
+    bHammer.classList.remove('tutglow'); praise('ham', '망치로 부쉈어요!');
     busy = true;
     hammerMode = false;
     field.classList.remove('hammering'); tip.hidden = true;
@@ -2272,13 +2319,13 @@ svg { display: block; }
       save.coins -= cost; save.hearts = Math.min(HEART_MAX, save.hearts + k); persist(); S('coin'); renderHearts(); updateHud(false); drawHeartShop();
     }
     
-    else if (act === 'keyok') { save.seenKey = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
-    else if (act === 'crateok') { save.seenCrateTut = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
-    else if (act === 'gooyes') { save.seenGooTut = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
+    else if (act === 'keyok') { save.seenKey = 1; persist(); hideOver(); if (!ended) { scheduleHint(); setTimeout(() => gimmickDemo('key'), 400); } }
+    else if (act === 'crateok') { save.seenCrateTut = 1; persist(); hideOver(); if (!ended) { scheduleHint(); setTimeout(() => gimmickDemo('crate'), 400); } }
+    else if (act === 'gooyes') { save.seenGooTut = 1; persist(); hideOver(); if (!ended) { scheduleHint(); setTimeout(() => gimmickDemo('goo'), 400); } }
     else if (act === 'shufok') { hideOver(); bShuffle.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'mvok') { hideOver(); bMoves.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'hamok') { hideOver(); bHammer.classList.add('tutglow'); if (!ended) scheduleHint(); }
-    else if (act === 'iceok') { save.seenIce = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
+    else if (act === 'iceok') { save.seenIce = 1; persist(); hideOver(); if (!ended) { scheduleHint(); setTimeout(() => gimmickDemo('ice'), 400); } }
     else if (act === 'heartwait') { delete over.dataset.noheart; hideOver(); openLevels(); }
     else if (act === 'pay') {
       const p = Object.values(PAID).flat().find(x => x.id === b.dataset.k);
@@ -2988,7 +3035,7 @@ svg { display: block; }
   bMoves.addEventListener('click', () => {
     if (ended || !over.hidden) return;
     if (save.mv <= 0) { if (!ended && !busy) openShop(); return; }
-    save.mv--; moves += 3; persist(); bMoves.classList.remove('tutglow');
+    save.mv--; moves += 3; persist(); bMoves.classList.remove('tutglow'); praise('mv', '이동이 늘었어요!');
     S('coin');
     updateHud(false); showToast('이동 +3');
   });
@@ -3002,6 +3049,7 @@ svg { display: block; }
     updateHud(false);
     await shuffleBoard();
     busy = false;
+    praise('shuf', '잘 섞였어요!');
     scheduleHint();
   });
   $('itemShop').addEventListener('click', () => { if (navBlocked()) return; S('click'); openShop(); });
