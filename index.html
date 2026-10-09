@@ -1859,7 +1859,7 @@ svg { display: block; }
     if (first && level % 6 === 0) { save.shuf++; gifts.push(ic('shuf', 16) + ' 섞기 +1'); }
     if (first && level % 10 === 0) { save.mv++; gifts.push(ic('mv', 16) + ' 이동권 +1'); }
     DECOR.filter(d => d.lv === level && !save.best[level] && prevPlaced(d)).forEach(d => gifts.push(ic('gift', 16) + ' 새 가구: ' + d.name));
-    const gain = Math.max(0, stars - prevStars);
+    const gain = Math.max(0, roomStars(stars) - roomStars(prevStars));
     if (gain > 0) gifts.push(ic('star', 16) + ' 방 별 +' + gain);
     save.coins += reward;
     save.stars[level] = Math.max(save.stars[level] || 0, stars);
@@ -2118,6 +2118,7 @@ svg { display: block; }
   }
 
   /* ---------- input ---------- */
+  function roomStars(s) { return Math.ceil((s || 0) / 2); }
   function tileAt(e) {
     const rect = field.getBoundingClientRect();
     const c = Math.floor((e.clientX - rect.left) / cell);
@@ -2200,8 +2201,8 @@ svg { display: block; }
   ];
   const roomEl = $('room'), sceneEl = $('scene'), rpanel = $('rpanel');
   sceneEl.style.backgroundImage = 'url(' + ROOM.img.bg + ')';
-  const starsTotal = () => Object.keys(save.stars).reduce((a, k) => a + (save.stars[k] || 0), 0) + (save.bonus | 0);
-  const starsLeft = () => starsTotal() - save.spent;
+  const starsTotal = () => Object.keys(save.stars).reduce((a, k) => a + roomStars(save.stars[k] || 0), 0) + (save.bonus | 0);
+  const starsLeft = () => Math.max(0, starsTotal() - save.spent);
   const clearedMax = () => Object.keys(save.best || {}).reduce((m, k) => Math.max(m, +k || 0), 0);
   // 가구는 단계 순서대로 하나씩: 앞 가구를 놓아야 다음 가구가 열려요 (단계 클리어도 필요해요)
   const ORDER = DECOR.slice().sort((a, b) => a.lv - b.lv);
