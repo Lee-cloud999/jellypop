@@ -1277,6 +1277,7 @@ svg { display: block; }
       if (hasCrate) { crateN = 2 + Math.floor(n / 10); g.push({ k: 'x', n: crateN }); }
       moves += hasIce && hasCrate ? 5 : hasIce ? 3 : 2;
     }
+    if (n === 3) { g.push({ k: 'b', n: 1 }); moves += 3; } // 3단계: T자로 맞춰 폭탄 만들기
     let keyN = 0, gooN = 0;
     if (KEY_LV.indexOf(n) >= 0) { g.splice(1); g.forEach(x => { if (x.k === 'c') x.n = Math.max(4, Math.round(x.n * (n === 14 ? 0.5 : 0.7))); }); keyN = 2 + Math.floor(n / 20); g.push({ k: 'k', n: keyN }); moves += n === 14 ? 12 : 7; }
     if (GOO_LV.indexOf(n) >= 0) { g.splice(1); gooN = 2 + Math.floor(n / 12); g.push({ k: 'g', n: gooN }); moves += 2; }
@@ -1881,6 +1882,35 @@ svg { display: block; }
     }
     return cands.length ? cands[rnd(cands.length)] : null;
   }
+  // T자·L자(가로 3 + 세로 3이 겹치는 모양)로 맞춰져서 폭탄이 생기는 수
+  function bombDemoFind() {
+    const cands = [];
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) for (const [dr, dc] of [[0, 1], [1, 0]]) {
+      const r2 = r + dr, c2 = c + dc;
+      if (r2 >= R || c2 >= C) continue;
+      const a = grid[r][c], b = grid[r2][c2];
+      if (!a || !b || isFixed(a) || isFixed(b) || a.special || b.special || a.key || b.key) continue;
+      swapGrid(r, c, r2, c2);
+      const runs = findRuns(), hs = new Set(), vs = new Set();
+      runs.forEach(run => run.cells.forEach(t => (run.dir === 'h' ? hs : vs).add(t)));
+      let ok = false; hs.forEach(t => { if (vs.has(t)) ok = true; });
+      swapGrid(r, c, r2, c2);
+      if (ok) cands.push([r, c, r2, c2]);
+    }
+    return cands.length ? cands[rnd(cands.length)] : null;
+  }
+  function bombDemo() {
+    if (ended || busy || !cover.hidden || !lvEl.hidden) return;
+    const h = bombDemoFind(); if (!h) return;
+    fingerDemo(h, '이렇게 바꾸면 <b>T자</b>로 맞춰져서<br><b>폭탄 젤리</b>가 생겨요!', null, 2800);
+  }
+  function showBombTutorial() {
+    if (level !== 3 || ended) return;
+    clearHint();
+    showOver('<h3>T자 맞추기</h3><img src="' + IMG[8] + '" alt="" style="width:84px;height:84px;object-fit:contain">' +
+      '<p>가로 3개와 세로 3개가 <b>T자나 L자</b>로 만나게 맞추면<br><b>폭탄 젤리</b>가 생겨요!<br>폭탄은 터질 때 주변을 넓게 없애요.</p>' +
+      '<div class="row"><button class="btn primary" type="button" data-act="bombok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
+  }
   function gimmickDemo(kind) {
     if (ended || busy || !cover.hidden || !lvEl.hidden) return;
     const h = gimmickDemoFind(kind); if (!h) return;
@@ -2370,6 +2400,7 @@ svg { display: block; }
     else if (act === 'shufok') { hideOver(); bShuffle.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'mvok') { hideOver(); bMoves.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'hamok') { hideOver(); bHammer.classList.add('tutglow'); if (!ended) scheduleHint(); }
+    else if (act === 'bombok') { hideOver(); if (!ended) { scheduleHint(); setTimeout(bombDemo, 400); } }
     else if (act === 'iceok') { save.seenIce = 1; persist(); hideOver(); if (!ended) { scheduleHint(); setTimeout(() => gimmickDemo('ice'), 400); } }
     else if (act === 'heartwait') { delete over.dataset.noheart; hideOver(); openLevels(); }
     else if (act === 'pay') {
@@ -2479,6 +2510,7 @@ svg { display: block; }
     field.classList.remove('hammering'); tip.hidden = true;
     hideOver();
     newBoard();
+    if (level === 3) for (let t = 0; t < 60 && !bombDemoFind(); t++) newBoard(); // 시연할 T자 한 수가 있는 판으로
     if (level === 1) for (let t = 0; t < 40 && !(hintDir('v') && hintDir('h')); t++) newBoard(); // 시연할 세로·가로 한 수가 모두 있는 판으로
     goals.forEach(g => { if (g.k === 'i') g.n = grid.flat().filter(t => t && t.frozen).length; if (g.k === 'x') g.n = grid.flat().filter(t => t && t.crate).length; if (g.k === 'k') g.n = grid.flat().filter(t => t && t.key).length; if (g.k === 'g') g.n = gooCount(); });
     updateHud(false);
@@ -2486,6 +2518,7 @@ svg { display: block; }
     scheduleHint();
     if (cfg.keyN > 0 && (!save.seenKey || level === 14) && cover.hidden && lvEl.hidden) setTimeout(showKeyTutorial, 500);
     else if (level === 2 && cover.hidden && lvEl.hidden) setTimeout(showHammerTutorial, 500);
+    else if (level === 3 && cover.hidden && lvEl.hidden) setTimeout(showBombTutorial, 500);
     else if (level === 4 && cover.hidden && lvEl.hidden) setTimeout(showMoveTutorial, 500);
     else if (level === 5 && cover.hidden && lvEl.hidden) setTimeout(showShuffleTutorial, 500);
     else if (level === 1 && cover.hidden && lvEl.hidden) setTimeout(() => showFinger('v'), 800);
