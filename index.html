@@ -1697,6 +1697,42 @@ svg { display: block; }
     endCheck();
   }
 
+  // 클리어 연출: 남은 이동 수만큼 줄무늬 젤리가 생기고 차례로 터져요 (화면을 한 번 누르면 건너뛰어요)
+  async function clearFinale(left) {
+    if (left <= 0) return;
+    let skip = false;
+    const onSkip = () => { skip = true; };
+    document.addEventListener('pointerdown', onSkip, true);
+    try {
+      showToast('남은 이동 ' + left + '개 보너스! 화면을 누르면 건너뛰어요');
+      const n = Math.min(left, 12);
+      let shown = left;
+      await sleep(350);
+      for (let i = 0; i < n && !skip; i++) {
+        const pool = grid.flat().filter(x => x && !isFixed(x) && !x.special && !x.el.classList.contains('pop'));
+        if (!pool.length) break;
+        const t = pool[rnd(pool.length)];
+        const horiz = rnd(2) === 0;
+        t.special = horiz ? 'row' : 'col'; render(t);
+        t.el.classList.remove('born'); void t.el.offsetWidth; t.el.classList.add('born');
+        shown = Math.max(0, left - Math.ceil((i + 1) * left / n)); elMoves.textContent = shown;
+        S('make');
+        await sleep(Math.max(70, 150 - i * 6));
+        if (skip) break;
+        const hit = grid.flat().filter(x => x && !isFixed(x) && !x.el.classList.contains('pop') && (horiz ? x.r === t.r : x.c === t.c));
+        S('sweep');
+        FX.beam(horiz, horiz ? t.r : t.c);
+        hit.forEach(x => { x.el.classList.add('pop'); FX.burst((x.c + 0.5) * cell, (x.r + 0.5) * cell, x.special ? '#FFD25E' : FX.COLORS[x.type], 8, 160); });
+        FX.float((t.c + 0.5) * cell, (t.r + 0.5) * cell, '+' + (30 * Math.ceil(left / n)), i % 3 === 2);
+        if (i % 4 === 3) FX.shake(3, 0.25);
+        await sleep(Math.max(70, 160 - i * 6));
+      }
+    } finally {
+      document.removeEventListener('pointerdown', onSkip, true);
+      elMoves.textContent = 0;
+    }
+  }
+
   async function winLevel() {
     ended = true; busy = true;
     clearHint();
@@ -1721,6 +1757,7 @@ svg { display: block; }
     evTrack(level, stars);
     persist();
     updateHud(true);
+    await clearFinale(movesLeft);
     S('win');
     FX.confetti();
     await sleep(500);
