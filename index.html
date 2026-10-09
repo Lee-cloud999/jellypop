@@ -1629,6 +1629,7 @@ svg { display: block; }
       runs.forEach(run => { if (run.cells.length === 4) want(pref(run), run.dir === 'h' ? 'col' : 'row'); });
       creations.forEach(({ t }) => set.delete(t));
 
+      const lineOnly = new Set(); // 가로/세로 줄무늬로만 터진 칸 (옆 칸 상자·얼음은 안 깨져요)
       const queue = [...set].filter(t => t.special);
       const activated = new Set();
       while (queue.length) {
@@ -1646,7 +1647,8 @@ svg { display: block; }
         }
         else if (t.big === 'cross3') { for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (Math.abs(r - t.r) <= 1 || Math.abs(c - t.c) <= 1) hit.push(grid[r][c]); }
         else { const rad = t.rad || 2; for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (Math.abs(r - t.r) + Math.abs(c - t.c) <= rad) hit.push(grid[r][c]); }
-        for (const x of hit) { if (!x) continue; set.add(x); if (x.special && !activated.has(x)) queue.push(x); }
+        const lineFx = t.special === 'row' || t.special === 'col';
+        for (const x of hit) { if (!x) continue; if (!set.has(x) && lineFx) lineOnly.add(x); else if (!lineFx) lineOnly.delete(x); set.add(x); if (x.special && !activated.has(x)) queue.push(x); }
       }
       const crateHits = new Set();
       [...set].forEach(x => { if (x.key) set.delete(x); else if (isFixed(x)) { set.delete(x); crateHits.add(x); } });
@@ -1660,6 +1662,7 @@ svg { display: block; }
       {
         const cellsHit = [...set, ...survivors.map(s => s.t)];
         cellsHit.forEach(x => {
+          if (lineOnly.has(x)) return;
           [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => {
             const nb = grid[x.r + dr] && grid[x.r + dr][x.c + dc];
             if (isFixed(nb)) crateHits.add(nb);
