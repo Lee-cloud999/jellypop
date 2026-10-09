@@ -1973,7 +1973,7 @@ svg { display: block; }
     if (save.hearts >= HEART_MAX) save.hAt = now;
     return ch;
   }
-  const heartHalf = () => save.hearts < HEART_MAX && heartLeftMs() <= HEART_MS / 2; // 절반 이상 차면 반 하트
+  const heartHalf = () => false; // 하트는 정수로만 표시해요 (반 하트 이미지는 쓰지 않아요)
   let lastHalf = false;
   const heartLeftMs = () => save.hearts >= HEART_MAX ? 0 : Math.max(0, HEART_MS - (Date.now() - save.hAt));
   const mmss = ms => { const t = Math.ceil(ms / 1000); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
