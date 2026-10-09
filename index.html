@@ -415,16 +415,19 @@ svg { display: block; }
   -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 55%); mask-image: radial-gradient(circle, #000 8%, transparent 55%);
   animation: raySpin 16s linear infinite; }
 @keyframes raySpin { to { transform: rotate(360deg); } }
+.over.winfx { overflow: hidden; }
+@media (max-height: 640px) { .over.winfx { overflow-y: auto; } .over.winfx::before { display: none; } }
 .over.winfx > * { position: relative; z-index: 1; }
 .over h3.clear { font-size: 58px; background: linear-gradient(90deg, #ff6fa5, #ffb347, #ffe066, #7be07b, #6ec6ff, #b48cff, #ff6fa5); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 rgba(90, 60, 120, 0.35)) drop-shadow(0 0 12px rgba(255, 224, 102, 0.9)); animation: starpop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards, clrShine 2.4s linear infinite; }
 @keyframes clrShine { to { background-position: 200% 0; } }
-.clearbanner { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; pointer-events: none; font-family: var(--font-display); font-size: 84px; letter-spacing: 2px; background: linear-gradient(90deg, #ff6fa5, #ffb347, #ffe066, #7be07b, #6ec6ff, #b48cff); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 rgba(90, 60, 120, 0.45)) drop-shadow(0 0 18px rgba(255, 255, 255, 0.95)); animation: cbanner 1.5s ease-out both; }
+.clearbanner { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; pointer-events: none; overflow: hidden; }
+.clearbanner span { display: block; font-family: var(--font-display); font-size: 84px; letter-spacing: 2px; background: linear-gradient(90deg, #ff6fa5, #ffb347, #ffe066, #7be07b, #6ec6ff, #b48cff); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 rgba(90, 60, 120, 0.45)) drop-shadow(0 0 18px rgba(255, 255, 255, 0.95)); animation: cbanner 1.5s ease-out both; }
 @keyframes cbanner { 0% { transform: scale(0.2) rotate(-10deg); opacity: 0; } 22% { transform: scale(1.3) rotate(3deg); opacity: 1; } 36% { transform: scale(1) rotate(0); } 78% { transform: scale(1.04); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
-@media (min-width: 700px) { .clearbanner { font-size: 120px; } .over h3.clear { font-size: 76px; } }
+@media (min-width: 700px) { .clearbanner span { font-size: 120px; } .over h3.clear { font-size: 76px; } }
 @keyframes starpop { 0% { transform: scale(0) rotate(-50deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .float, .boardwrap.shake, .flash.go, .goal.pulse, .goal.pulse img, .over .stars.win svg, .over h3.clear, .clearbanner, .over.winfx::before { animation: none !important; }
+  .float, .boardwrap.shake, .flash.go, .goal.pulse, .goal.pulse img, .over .stars.win svg, .over h3.clear, .clearbanner span, .over.winfx::before { animation: none !important; }
   .tile { transition-duration: 0.01ms; }
   .tile .gem, .tile img, .bump, .toast.show { animation: none !important; }
 }
@@ -2109,7 +2112,7 @@ svg { display: block; }
       let done = false, timers = [];
       const fin = () => { if (done) return; done = true; timers.forEach(clearTimeout); field.removeEventListener('pointerdown', fin); const b = field.querySelector('.clearbanner'); if (b) b.remove(); res(); };
       elToast.classList.remove('show'); // 남은 이동 보너스 안내 문구 치우기
-      const bn = document.createElement('div'); bn.className = 'clearbanner'; bn.textContent = 'CLEAR!'; field.appendChild(bn);
+      const bn = document.createElement('div'); bn.className = 'clearbanner'; bn.innerHTML = '<span>CLEAR!</span>'; field.appendChild(bn);
       const W = field.clientWidth, H = field.clientHeight, cols = ['#FF6FA5', '#FFB347', '#FFE066', '#7BE07B', '#6EC6FF', '#B48CFF'];
       const nF = 5 + stars * 2;
       for (let i = 0; i < nF; i++) timers.push(setTimeout(() => {
