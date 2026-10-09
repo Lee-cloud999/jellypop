@@ -1822,7 +1822,7 @@ svg { display: block; }
   function showFinger(dir) {
     if (level !== 1 || ended || busy || !cover.hidden || !lvEl.hidden) return;
     dir = dir || 'v';
-    const h = hintDir(dir) || hintDir(dir === 'v' ? 'h' : 'v'); if (!h) return;
+    const h = hintDir(dir); if (!h) { if (dir === 'v') showFinger('h'); return; }
     hideFinger(); fingerOn = true;
     const [r1, c1, r2, c2] = h;
     const vert = c1 === c2;
@@ -1891,6 +1891,7 @@ svg { display: block; }
   async function useHammer(t) {
     if (busy || ended) return;
     if (t.key) { showToast('열쇠는 망치로 부술 수 없어요'); return; }
+    bHammer.classList.remove('tutglow');
     busy = true;
     hammerMode = false;
     field.classList.remove('hammering'); tip.hidden = true;
@@ -2090,7 +2091,7 @@ svg { display: block; }
     if (!save.gaveHammer2) { save.gaveHammer2 = 1; save.hammers++; persist(); updateHud(false); gift = '<p style="font-weight:800">망치 +1을 선물로 받았어요!</p>'; }
     clearHint();
     showOver('<h3>망치 아이템</h3>' + ic('hammer', 84) + gift +
-      '<p>아래의 <b>망치</b> 버튼을 누른 다음,<br>없애고 싶은 젤리를 누르면 그 젤리가 바로 터져요.<br>막혔을 때 사용해 보세요!</p>' +
+      '<p>아래의 <b>망치</b> 버튼을 누른 다음,<br>없애고 싶은 젤리를 누르면 그 젤리가 바로 터져요.<br>지금 직접 써 보세요!</p>' +
       '<div class="row"><button class="btn primary" type="button" data-act="hamok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
   }
   function showMoveTutorial() {
@@ -2275,7 +2276,7 @@ svg { display: block; }
     else if (act === 'gooyes') { save.seenGooTut = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'shufok') { hideOver(); bShuffle.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'mvok') { hideOver(); bMoves.classList.add('tutglow'); if (!ended) scheduleHint(); }
-    else if (act === 'hamok') { hideOver(); if (!ended) scheduleHint(); }
+    else if (act === 'hamok') { hideOver(); bHammer.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'iceok') { save.seenIce = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'heartwait') { delete over.dataset.noheart; hideOver(); openLevels(); }
     else if (act === 'pay') {
@@ -2371,7 +2372,7 @@ svg { display: block; }
 
   function setupLevel(n) {
     hideFinger();
-    bMoves.classList.remove('tutglow'); bShuffle.classList.remove('tutglow');
+    bMoves.classList.remove('tutglow'); bShuffle.classList.remove('tutglow'); bHammer.classList.remove('tutglow');
     level = Math.min(MAX_LEVEL, Math.max(1, n));
     save.level = level; persist();
     const prevCells = R * C;
@@ -2385,6 +2386,7 @@ svg { display: block; }
     field.classList.remove('hammering'); tip.hidden = true;
     hideOver();
     newBoard();
+    if (level === 1) for (let t = 0; t < 40 && !(hintDir('v') && hintDir('h')); t++) newBoard(); // 시연할 세로·가로 한 수가 모두 있는 판으로
     goals.forEach(g => { if (g.k === 'i') g.n = grid.flat().filter(t => t && t.frozen).length; if (g.k === 'x') g.n = grid.flat().filter(t => t && t.crate).length; if (g.k === 'k') g.n = grid.flat().filter(t => t && t.key).length; if (g.k === 'g') g.n = gooCount(); });
     updateHud(false);
     showToast(level + '단계 · ' + TIER_NAME[tierOf(level)] + (level === ICE_LV[0] ? ' · 얼음 칸이 나왔어요!' : level === CRATE_LV[0] ? ' · 상자가 나왔어요!' : level === KEY_LV[0] ? ' · 열쇠 젤리를 맨 아래로 내려요!' : level === GOO_LV[0] ? ' · 얼룩이 나왔어요! 방치하면 번져요' : R * C > prevCells && grid.length ? ' · 보드가 커졌어요!' : ''));
