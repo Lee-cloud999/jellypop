@@ -295,8 +295,9 @@ svg { display: block; }
 .tapsound[hidden] { display: none; }
 .cover { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: var(--bg); color: var(--ink); }
 .cover[hidden] { display: none; }
+.cover img.ok { opacity: 1; }
 .cover h1 { margin: 0; font: 400 clamp(44px,14vw,72px)/1.05 'Jua','Noto Sans KR',sans-serif; background: linear-gradient(transparent 62%, var(--accent) 62%); padding: 0 8px; }
-.cover img { width: 96px; height: 96px; object-fit: contain; animation: tsPulse 1.6s ease-in-out infinite; }
+.cover img { opacity: 0; transition: opacity .25s; width: 96px; height: 96px; object-fit: contain; animation: tsPulse 1.6s ease-in-out infinite; }
 .cover button { border: 0; border-radius: 999px; padding: 16px 44px; min-height: 56px; font: 400 26px 'Jua','Noto Sans KR',sans-serif; background: var(--accent); color: var(--on-accent); box-shadow: 0 5px 0 var(--edge), 0 10px 22px rgba(90,75,107,.25); cursor: pointer; }
 
 @keyframes tsPulse { 50% { transform: scale(1.06); } }
@@ -1136,7 +1137,7 @@ svg { display: block; }
       syncTap();
     });
   });
-  const cover = $('cover'); $('coverImg').src = IMG[1];
+  const cover = $('cover'); { const ci = $('coverImg'); ci.onload = () => ci.classList.add('ok'); ci.src = IMG[1]; if (ci.complete && ci.naturalWidth) ci.classList.add('ok'); }
   $('coverGo').addEventListener('click', () => {
     cover.hidden = true;
     openMap(); // after the start screen, pick a level first
