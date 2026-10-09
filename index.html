@@ -405,10 +405,21 @@ svg { display: block; }
 .over .stars.win svg:nth-child(2) { animation-delay: 0.35s; }
 .over .stars.win svg:nth-child(3) { animation-delay: 0.6s; }
 .over h3.clear { animation: starpop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+.over.winfx::before { content: ''; position: absolute; left: 50%; top: 40%; width: 220%; aspect-ratio: 1; margin: -110% 0 0 -110%; z-index: -1; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 214, 102, 0.42) 0deg 9deg, rgba(255, 214, 102, 0) 9deg 18deg);
+  -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 55%); mask-image: radial-gradient(circle, #000 8%, transparent 55%);
+  animation: raySpin 16s linear infinite; }
+@keyframes raySpin { to { transform: rotate(360deg); } }
+.over.winfx > * { position: relative; z-index: 1; }
+.over h3.clear { font-size: 58px; background: linear-gradient(90deg, #ff6fa5, #ffb347, #ffe066, #7be07b, #6ec6ff, #b48cff, #ff6fa5); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 rgba(90, 60, 120, 0.35)) drop-shadow(0 0 12px rgba(255, 224, 102, 0.9)); animation: starpop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards, clrShine 2.4s linear infinite; }
+@keyframes clrShine { to { background-position: 200% 0; } }
+.clearbanner { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; pointer-events: none; font-family: var(--font-display); font-size: 84px; letter-spacing: 2px; background: linear-gradient(90deg, #ff6fa5, #ffb347, #ffe066, #7be07b, #6ec6ff, #b48cff); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 rgba(90, 60, 120, 0.45)) drop-shadow(0 0 18px rgba(255, 255, 255, 0.95)); animation: cbanner 1.5s ease-out both; }
+@keyframes cbanner { 0% { transform: scale(0.2) rotate(-10deg); opacity: 0; } 22% { transform: scale(1.3) rotate(3deg); opacity: 1; } 36% { transform: scale(1) rotate(0); } 78% { transform: scale(1.04); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+@media (min-width: 700px) { .clearbanner { font-size: 120px; } .over h3.clear { font-size: 76px; } }
 @keyframes starpop { 0% { transform: scale(0) rotate(-50deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .float, .boardwrap.shake, .flash.go, .goal.pulse, .goal.pulse img, .over .stars.win svg, .over h3.clear { animation: none !important; }
+  .float, .boardwrap.shake, .flash.go, .goal.pulse, .goal.pulse img, .over .stars.win svg, .over h3.clear, .clearbanner, .over.winfx::before { animation: none !important; }
   .tile { transition-duration: 0.01ms; }
   .tile .gem, .tile img, .bump, .toast.show { animation: none !important; }
 }
@@ -1382,7 +1393,7 @@ svg { display: block; }
     over.dataset.shop = '1';
     over.scrollTop = st;
   }
-  function showOver(html) { delete over.dataset.shop; delete over.dataset.lv; over.classList.remove('tight'); over.innerHTML = html; over.hidden = false; }
+  function showOver(html) { delete over.dataset.shop; delete over.dataset.lv; over.classList.remove('tight'); over.classList.remove('winfx'); over.innerHTML = html; over.hidden = false; }
   function hideOver() { delete over.dataset.shop; delete over.dataset.lv; prevOver = null; over.hidden = true; over.innerHTML = ''; }
 
   /* ---------- obstacles: ice cells & crates ---------- */
@@ -1400,7 +1411,7 @@ svg { display: block; }
     crate1: '<rect x="8" y="10" width="84" height="82" rx="14" fill="#E2B27A" stroke="#A8743A" stroke-width="5"/><path d="M18 36h64M18 64h64" stroke="#C98F52" stroke-width="5" stroke-linecap="round"/><rect x="44" y="10" width="12" height="82" fill="#F4D9B0" stroke="#A8743A" stroke-width="3"/><path d="M30 14l10 22-12 14 14 14-8 18M72 30l-12 10 10 12-8 14" fill="none" stroke="#6F4520" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'
   };
   const obsSrc = k => OBSIMG[k] || ('data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' + OBSVG[k] + '</svg>'));
-  const ICE_LV = [3, 8, 10, 13, 16, 19, 22, 25, 28, 30], CRATE_LV = [7, 12, 13, 15, 18, 21, 24, 27, 29, 30], KEY_LV = [9, 14, 17, 23], GOO_LV = [6, 11, 20, 26];
+  const ICE_LV = [8, 10, 13, 16, 19, 22, 25, 28, 30], CRATE_LV = [7, 12, 13, 15, 18, 21, 24, 27, 29, 30], KEY_LV = [9, 14, 17, 23], GOO_LV = [6, 11, 20, 26];
   const iceKey = (hp, max) => (max >= 2 && hp < max ? 'ice1' : 'ice0');
   const isFixed = t => !!(t && (t.crate || t.frozen || t.goo));
   const gooCount = () => grid.flat().filter(x => x && x.goo).length;
@@ -1997,6 +2008,38 @@ svg { display: block; }
     }
   }
 
+  // 클리어 연출: 큰 CLEAR! 글자 + 폭죽 + 색종이 (탭하면 건너뛰기)
+  function clearShow(stars) {
+    return new Promise(res => {
+      let done = false, timers = [];
+      const fin = () => { if (done) return; done = true; timers.forEach(clearTimeout); field.removeEventListener('pointerdown', fin); const b = field.querySelector('.clearbanner'); if (b) b.remove(); res(); };
+      elToast.classList.remove('show'); // 남은 이동 보너스 안내 문구 치우기
+      const bn = document.createElement('div'); bn.className = 'clearbanner'; bn.textContent = 'CLEAR!'; field.appendChild(bn);
+      const W = field.clientWidth, H = field.clientHeight, cols = ['#FF6FA5', '#FFB347', '#FFE066', '#7BE07B', '#6EC6FF', '#B48CFF'];
+      const nF = 5 + stars * 2;
+      for (let i = 0; i < nF; i++) timers.push(setTimeout(() => {
+        const x = W * (0.12 + Math.random() * 0.76), y = H * (0.1 + Math.random() * 0.6), c = cols[i % cols.length];
+        FX.burst(x, y, c, 30, 320); FX.ring(x, y, c, cell * 2.2); if (i % 2 === 0) S('goal');
+      }, 120 + i * 150));
+      timers.push(setTimeout(() => FX.confetti(), 700));
+      timers.push(setTimeout(fin, 1600));
+      field.addEventListener('pointerdown', fin);
+    });
+  }
+  function winAfter(stars) {
+    // 별이 하나씩 뜰 때마다 반짝, 점수는 올라가는 숫자 연출
+    const fr = field.getBoundingClientRect();
+    over.querySelectorAll('.stars.win svg').forEach((sv, i) => {
+      if (i >= stars) return;
+      setTimeout(() => { if (over.hidden) return; const r = sv.getBoundingClientRect(); FX.burst(r.left - fr.left + r.width / 2, r.top - fr.top + r.height / 2, '#FFE066', 18, 230); FX.ring(r.left - fr.left + r.width / 2, r.top - fr.top + r.height / 2, '#FFFFFF', cell * 1.2); S('goal'); }, 150 + i * 250);
+    });
+    const big = over.querySelector('.big');
+    if (big) {
+      const to = score, t0 = performance.now();
+      const step = now => { if (over.hidden || !big.isConnected) return; const k = Math.min(1, (now - t0) / 900); big.textContent = fmt(Math.round(to * (1 - Math.pow(1 - k, 3)))) + '점'; if (k < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    }
+  }
   async function winLevel() {
     ended = true; busy = true;
     clearHint();
@@ -2023,8 +2066,8 @@ svg { display: block; }
     updateHud(true);
     await clearFinale(movesLeft);
     S('win');
-    FX.confetti();
-    await sleep(500);
+    FX.confetti(); FX.flash();
+    await clearShow(stars);
     showOver(
       '<h3 class="clear">' + (level >= MAX_LEVEL ? '모든 단계 클리어!' : '클리어!') + '</h3><div class="stars win">' + starsHtml(stars, 44) + '</div>' +
       '<div class="big">' + fmt(score) + '점</div>' +
@@ -2033,6 +2076,8 @@ svg { display: block; }
       '<div class="rw"><span>코인 +' + reward + (first ? ' (첫 클리어 +30)' : '') + '</span>' + gifts.map(g => '<span>' + g + '</span>').join('') + '</div>' +
       '<div class="row"><button class="btn primary" type="button" data-act="next">' + (level >= MAX_LEVEL ? '단계 고르기' : '다음 단계') + '</button><button class="btn" type="button" data-act="retry">다시 하기</button></div>'
     );
+    over.classList.add('winfx');
+    winAfter(stars);
   }
 
   function loseLevel() {
@@ -2175,7 +2220,7 @@ svg { display: block; }
       '<div class="row"><button class="btn primary" type="button" data-act="crateok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
   }
   function showIceTutorial() {
-    if ((save.seenIce && level !== 3) || ended || !cfg || !(cfg.iceN > 0)) return;
+    if ((save.seenIce && level !== ICE_LV[0]) || ended || !cfg || !(cfg.iceN > 0)) return;
     clearHint();
     showOver('<h3>얼음 젤리</h3><img src="' + obsSrc('ice0') + '" alt="" style="width:84px;height:84px;object-fit:contain">' +
       '<p>얼음에 갇힌 젤리는 움직일 수 없어요.<br>바로 옆에서 젤리를 터뜨리거나,<br>얼음 속 젤리까지 같은 색 3개를 맞추면 얼음이 깨져요!</p>' +
@@ -2445,7 +2490,7 @@ svg { display: block; }
     else if (level === 5 && cover.hidden && lvEl.hidden) setTimeout(showShuffleTutorial, 500);
     else if (level === 1 && cover.hidden && lvEl.hidden) setTimeout(() => showFinger('v'), 800);
     else if (cfg.gooN > 0 && (!save.seenGooTut || level === 6) && cover.hidden && lvEl.hidden) setTimeout(showGooTutorial, 500);
-    else if (cfg.iceN > 0 && (!save.seenIce || level === 3) && cover.hidden && lvEl.hidden) setTimeout(showIceTutorial, 500);
+    else if (cfg.iceN > 0 && (!save.seenIce || level === ICE_LV[0]) && cover.hidden && lvEl.hidden) setTimeout(showIceTutorial, 500);
     else if (cfg.crateN > 0 && (!save.seenCrateTut || level === 7) && cover.hidden && lvEl.hidden) setTimeout(showCrateTutorial, 500);
   }
 
