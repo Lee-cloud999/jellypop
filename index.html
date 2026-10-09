@@ -1856,7 +1856,8 @@ svg { display: block; }
   /* ---------- hints ---------- */
   function clearSel() { if (selected) selected.el.classList.remove('sel'); selected = null; }
   let fingerOn = false, fingerTok = 0;
-  function hideFinger() { fingerOn = false; field.querySelectorAll('.finger,.fbub').forEach(e => e.remove()); field.querySelectorAll('.tile.hint').forEach(el => el.classList.remove('hint')); }
+  let stickyUntil = 0; // 튜토리얼 말풍선은 일정 시간 동안은 눌러도 사라지지 않아요
+  function hideFinger(force) { if (!force && Date.now() < stickyUntil) return; stickyUntil = 0; fingerOn = false; field.querySelectorAll('.finger,.fbub').forEach(e => e.remove()); field.querySelectorAll('.tile.hint').forEach(el => el.classList.remove('hint')); }
   function hintDir(dir) { // dir: 'v' 세로로 바꾸기 / 'h' 가로로 바꾸기
     const cand = [];
     for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
@@ -1866,7 +1867,7 @@ svg { display: block; }
     return cand.length ? cand[rnd(cand.length)] : null;
   }
   function fingerDemo(h, html, next, dur) {
-    hideFinger(); fingerOn = true;
+    hideFinger(true); fingerOn = true; stickyUntil = Date.now() + (dur || 2400);
     const [r1, c1, r2, c2] = h;
     const f = document.createElement('div'); f.className = 'finger'; f.textContent = '👆';
     f.style.animationIterationCount = '1';
@@ -1877,7 +1878,7 @@ svg { display: block; }
     field.appendChild(b); field.appendChild(f);
     grid[r1][c1].el.classList.add('hint'); grid[r2][c2].el.classList.add('hint');
     const tok = ++fingerTok; // 애니메이션 이벤트에 기대지 않고 타이머로 다음으로 넘어가요
-    setTimeout(() => { if (!fingerOn || tok !== fingerTok) return; if (next) next(); else { hideFinger(); scheduleHint(); } }, dur || 2400);
+    setTimeout(() => { if (!fingerOn || tok !== fingerTok) return; if (next) next(); else { hideFinger(true); scheduleHint(); } }, dur || 2400);
   }
   function showFinger(dir) {
     if (level !== 1 || ended || busy || !cover.hidden || !lvEl.hidden) return;
@@ -1956,10 +1957,10 @@ svg { display: block; }
     setTimeout(() => { if (b.isConnected) b.remove(); }, ms || 9000);
   }
   function plainBubble(html, ms) {
-    hideFinger();
+    hideFinger(true);
     const b = document.createElement('div'); b.className = 'fbub'; b.innerHTML = html; field.appendChild(b);
-    fingerOn = true; const tok = ++fingerTok;
-    setTimeout(() => { if (tok === fingerTok) hideFinger(); }, ms || 4500);
+    fingerOn = true; const tok = ++fingerTok; stickyUntil = Date.now() + (ms || 7000);
+    setTimeout(() => { if (tok === fingerTok) hideFinger(true); }, ms || 7000);
   }
   const GIMMICK_TXT = {
     ice: '<b>얼음 젤리</b>는 움직일 수 없어요.<br>옆에서 터뜨리면 얼음이 깨져요!',
@@ -1970,7 +1971,7 @@ svg { display: block; }
   function gimmickTip(kind) {
     if (ended || busy || !cover.hidden || !lvEl.hidden) return;
     const h = gimmickDemoFind(kind);
-    if (h) fingerDemo(h, GIMMICK_TXT[kind] + '<br>이렇게 바꿔 보세요!', null, 3200);
+    if (h) fingerDemo(h, GIMMICK_TXT[kind] + '<br>이렇게 바꿔 보세요!', null, 6500);
     else plainBubble(GIMMICK_TXT[kind]);
   }
   function ctxAfterMove() {
@@ -2586,7 +2587,7 @@ svg { display: block; }
   }
 
   function setupLevel(n) {
-    hideFinger(); hideItemTip(); madeMoves = 0; ctxShown = {};
+    hideFinger(true); hideItemTip(); madeMoves = 0; ctxShown = {};
     bMoves.classList.remove('tutglow'); bShuffle.classList.remove('tutglow'); bHammer.classList.remove('tutglow');
     level = Math.min(MAX_LEVEL, Math.max(1, n));
     save.level = level; persist();
