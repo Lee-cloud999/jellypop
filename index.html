@@ -2099,7 +2099,7 @@ svg { display: block; }
     const onSkip = () => { skip = true; };
     document.addEventListener('pointerdown', onSkip, true);
     try {
-      showToast('남은 이동 ' + left + '개 보너스! 화면을 누르면 건너뛰어요');
+      showToast('남은 이동 ' + left + '개 보너스!');
       const n = Math.min(left, 12);
       let shown = left;
       await sleep(350);
