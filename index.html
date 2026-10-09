@@ -203,9 +203,9 @@ svg { display: block; }
 .gem img { width: 100%; height: 100%; display: block; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
 .ice { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; transition: opacity 0.25s, transform 0.25s; }
 .ice img { width: 100%; height: 100%; display: block; object-fit: contain; opacity: 0.66; }
-.shat { position: absolute; left: 0; top: 0; width: var(--cell); height: var(--cell); pointer-events: none; z-index: 6; animation: shat 0.45s ease-out forwards; }
+.shat { position: absolute; left: 0; top: 0; width: var(--cell); height: var(--cell); pointer-events: none; z-index: 6; animation: shat 1s ease-out forwards; }
 .shat img { width: 100%; height: 100%; display: block; object-fit: contain; }
-@keyframes shat { from { opacity: 1; scale: 0.9; } to { opacity: 0; scale: 1.8; } }
+@keyframes shat { 0% { opacity: 1; scale: 0.95; } 45% { opacity: 1; scale: 1.25; } 100% { opacity: 0; scale: 1.6; } }
 .ice.out { opacity: 0; transform: scale(1.18) !important; }
 .tile.crate, .tile.frozen { z-index: 4; }
 .tile.frozen.hit .gem { animation: nope 0.3s ease-in-out; }
@@ -1326,7 +1326,7 @@ svg { display: block; }
     const el = document.createElement('div');
     el.className = 'shat'; el.style.transform = 'translate(' + (c * cell) + 'px,' + (r * cell) + 'px)';
     el.innerHTML = '<img alt="" src="' + obsSrc(k) + '">';
-    field.appendChild(el); setTimeout(() => el.remove(), 480);
+    field.appendChild(el); setTimeout(() => el.remove(), 1050);
   }
   const reduceMotionFx = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   function tallyKind(k) { goals.forEach(g => { if (g.k === k) g.got++; }); }
