@@ -233,6 +233,8 @@ svg { display: block; }
 .tile.sel .gem { transform: scale(1.14); animation: wobble 0.7s ease-in-out infinite; }
 .tile.sel::after { content: ""; position: absolute; inset: 3%; border: 3px dashed var(--ink); border-radius: 30%; opacity: 0.6; }
 .tile.pop .gem { transform: scale(0); opacity: 0; animation: popout 0.24s ease-in forwards; }
+.item.tutglow { animation: tutpulse 0.9s ease-in-out infinite; position: relative; z-index: 3; }
+@keyframes tutpulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255, 143, 184, 0)); } 50% { transform: scale(1.14); filter: drop-shadow(0 0 12px #ff8fb8) drop-shadow(0 0 20px #fff); } }
 .tile.rbmark .gem { animation: rbmark 0.55s ease-in-out both; }
 .tile.pop.slowpop .gem { animation: popout 0.5s ease-in forwards; }
 @keyframes rbmark { 0% { transform: scale(1); filter: none; } 50% { transform: scale(1.18); filter: brightness(1.5) drop-shadow(0 0 10px #fff) drop-shadow(0 0 16px #ff8fb8); } 100% { transform: scale(1.1); filter: brightness(1.35) drop-shadow(0 0 8px #fff); } }
@@ -2051,6 +2053,15 @@ svg { display: block; }
       '<p>아래의 <b>망치</b> 버튼을 누른 다음,<br>없애고 싶은 젤리를 누르면 그 젤리가 바로 터져요.<br>막혔을 때 사용해 보세요!</p>' +
       '<div class="row"><button class="btn primary" type="button" data-act="hamok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
   }
+  function showMoveTutorial() {
+    if (level !== 4 || ended) return;
+    let gift = '';
+    if (!save.gaveMove4) { save.gaveMove4 = 1; save.mv++; persist(); updateHud(false); gift = '<p style="font-weight:800">이동 아이템 +1을 선물로 받았어요!</p>'; }
+    clearHint();
+    showOver('<h3>이동 아이템</h3>' + ic('mv', 84) + gift +
+      '<p>이동 횟수가 모자랄 때 쓰는 아이템이에요.<br>누르면 <b>남은 이동이 3번</b> 늘어나요.<br>지금 아래의 <b>이동 +1</b> 버튼을 눌러서 직접 써 보세요!</p>' +
+      '<div class="row"><button class="btn primary" type="button" data-act="mvok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
+  }
   function showIceTutorial() {
     if ((save.seenIce && level !== 3) || ended || !cfg || !(cfg.iceN > 0)) return;
     clearHint();
@@ -2197,6 +2208,7 @@ svg { display: block; }
     }
     
     else if (act === 'keyok') { save.seenKey = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
+    else if (act === 'mvok') { hideOver(); bMoves.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'hamok') { hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'iceok') { save.seenIce = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'heartwait') { delete over.dataset.noheart; hideOver(); openLevels(); }
@@ -2292,6 +2304,7 @@ svg { display: block; }
   }
 
   function setupLevel(n) {
+    bMoves.classList.remove('tutglow');
     level = Math.min(MAX_LEVEL, Math.max(1, n));
     save.level = level; persist();
     const prevCells = R * C;
@@ -2311,6 +2324,7 @@ svg { display: block; }
     scheduleHint();
     if (cfg.keyN > 0 && (!save.seenKey || level === 14) && cover.hidden && lvEl.hidden) setTimeout(showKeyTutorial, 500);
     else if (level === 2 && cover.hidden && lvEl.hidden) setTimeout(showHammerTutorial, 500);
+    else if (level === 4 && cover.hidden && lvEl.hidden) setTimeout(showMoveTutorial, 500);
     else if (cfg.iceN > 0 && (!save.seenIce || level === 3) && cover.hidden && lvEl.hidden) setTimeout(showIceTutorial, 500);
   }
 
@@ -2900,7 +2914,7 @@ svg { display: block; }
   bMoves.addEventListener('click', () => {
     if (ended || !over.hidden) return;
     if (save.mv <= 0) { if (!ended && !busy) openShop(); return; }
-    save.mv--; moves += 3; persist();
+    save.mv--; moves += 3; persist(); bMoves.classList.remove('tutglow');
     S('coin');
     updateHud(false); showToast('이동 +3');
   });
