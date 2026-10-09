@@ -212,6 +212,16 @@ svg { display: block; }
   will-change: transform;
 }
 .gem { position: absolute; inset: 4%; transition: transform 0.18s ease, opacity 0.18s ease; }
+.tile.wing .gem { overflow: visible; }
+.wingdeco { position: absolute; left: -22%; right: -22%; top: 0%; height: 58%; pointer-events: none; display: flex; justify-content: space-between; }
+.wingdeco svg { width: 44%; height: 100%; overflow: visible; filter: drop-shadow(0 1px 1px rgba(90,75,107,.35)); }
+.wingdeco svg:first-child { transform-origin: 100% 70%; animation: wflapL 0.7s ease-in-out infinite; }
+.wingdeco svg:last-child { transform: scaleX(-1); transform-origin: 100% 70%; animation: wflapR 0.7s ease-in-out infinite; }
+@keyframes wflapL { 0%,100% { rotate: 0deg; } 50% { rotate: -16deg; } }
+@keyframes wflapR { 0%,100% { rotate: 0deg; } 50% { rotate: -16deg; } }
+.wingfly { position: absolute; left: 0; top: 0; width: var(--cell); height: var(--cell); z-index: 8; pointer-events: none; transition: transform 0.5s cubic-bezier(.45,.05,.7,.4); }
+.wingfly .gem { inset: 4%; animation: wbob 0.35s ease-in-out infinite alternate; }
+@keyframes wbob { from { translate: 0 -3px; } to { translate: 0 3px; } }
 .gem img { width: 100%; height: 100%; display: block; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
 .ice { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; transition: opacity 0.25s, transform 0.25s; }
 .ice img { width: 100%; height: 100%; display: block; object-fit: contain; opacity: 0.66; }
@@ -1560,6 +1570,10 @@ svg { display: block; }
   }
 
   /* ---------- tiles ---------- */
+  const WING_FROM = 9; // 열쇠가 나오는 단계부터 날개 젤리가 생겨요 (2×2로 모으기)
+  const wingOn = () => level >= WING_FROM;
+  const WING_PATH = '<svg viewBox="0 0 24 24"><path d="M23 15C17 1 4 3 2 8c-1.2 3.6 4 4.4 6.5 4C4.5 13 4.5 18 9.5 18c3.5 0 9-1 13.5-3z" fill="#fff" stroke="#A895D8" stroke-width="1.6" stroke-linejoin="round"/><path d="M20 14c-4-5-9-6-13-4.5" fill="none" stroke="#D8CCF2" stroke-width="1.2" stroke-linecap="round"/></svg>';
+  const WING_DECO = '<div class="wingdeco">' + WING_PATH + WING_PATH + '</div>';
   function render(t) {
     if (t.frozen && !t.el.querySelector('.ice')) {
       const d = document.createElement('div'); d.className = 'ice';
@@ -1568,8 +1582,9 @@ svg { display: block; }
     }
     if (t.key) { t.el.firstChild.innerHTML = '<img src="' + obsSrc('key0') + '" alt="" draggable="false">'; return; }
     if (t.crate) { t.el.firstChild.innerHTML = '<img src="' + obsSrc(t.crate >= 2 ? 'crate0' : 'crate1') + '" alt="" draggable="false">'; return; }
-    const src = t.special === 'rainbow' ? (RAINBOW_IMG || RB_SVG) : IMG[t.special ? SPECIAL_IMG[t.special] : t.type];
-    t.el.firstChild.innerHTML = '<img src="' + src + '" alt="" draggable="false">';
+    const src = t.special === 'rainbow' ? (RAINBOW_IMG || RB_SVG) : IMG[t.special && t.special !== 'wing' ? SPECIAL_IMG[t.special] : t.type];
+    t.el.firstChild.innerHTML = '<img src="' + src + '" alt="" draggable="false">' + (t.special === 'wing' ? WING_DECO : '');
+    t.el.classList.toggle('wing', t.special === 'wing');
     t.el.classList.toggle('special', !!t.special);
   }
   function makeTile(type) {
@@ -1620,7 +1635,25 @@ svg { display: block; }
         r = e;
       }
     }
+    if (wingOn()) {
+      for (let r = 0; r < R - 1; r++) for (let c = 0; c < C - 1; c++) {
+        const t = grid[r][c];
+        if (!t || t.special || t.crate || t.key || isFixed(t)) continue;
+        const q = [grid[r][c + 1], grid[r + 1][c], grid[r + 1][c + 1]];
+        if (q.every(x => x && same(t, x) && !isFixed(x))) runs.push({ dir: 'sq', cells: [t, ...q] });
+      }
+    }
     return runs;
+  }
+  function inSquare(r, c) {
+    const t = grid[r][c];
+    if (!wingOn() || !t || t.special || t.crate || t.key || isFixed(t)) return false;
+    for (let dr = -1; dr <= 0; dr++) for (let dc = -1; dc <= 0; dc++) {
+      const a = r + dr, b = c + dc;
+      if (a < 0 || b < 0 || a + 1 >= R || b + 1 >= C) continue;
+      if ([grid[a][b], grid[a][b + 1], grid[a + 1][b], grid[a + 1][b + 1]].every(x => x && same(t, x) && !isFixed(x))) return true;
+    }
+    return false;
   }
 
   function lineLen(r, c) {
@@ -1636,9 +1669,10 @@ svg { display: block; }
   function swapGrid(r1, c1, r2, c2) { const a = grid[r1][c1]; grid[r1][c1] = grid[r2][c2]; grid[r2][c2] = a; }
   function canSwapMatch(r1, c1, r2, c2) {
     if (isFixed(grid[r1][c1]) || isFixed(grid[r2][c2])) return false;
+    if (grid[r1][c1].special === 'wing' || grid[r2][c2].special === 'wing') return false;
     if (grid[r1][c1].special || grid[r2][c2].special) return true;
     swapGrid(r1, c1, r2, c2);
-    const ok = lineLen(r1, c1) >= 3 || lineLen(r2, c2) >= 3;
+    const ok = lineLen(r1, c1) >= 3 || lineLen(r2, c2) >= 3 || inSquare(r1, c1) || inSquare(r2, c2);
     swapGrid(r1, c1, r2, c2);
     return ok;
   }
@@ -1700,9 +1734,9 @@ svg { display: block; }
     await sleep(270);
   }
 
-  async function resolve(swapCells) {
+  async function resolve(swapCells, extra) {
     let chain = 0;
-    let forced = swapCells ? swapCells.filter(t => t.special) : [];
+    let forced = (swapCells ? swapCells.filter(t => t.special && t.special !== 'wing') : []).concat(extra || []);
     if (swapCells && swapCells.length === 2) {
       const [pa, pb] = swapCells;
       if (pa.special && pa.special === pb.special && pa.special !== 'bomb' && pa.special !== 'rainbow') {
@@ -1732,17 +1766,18 @@ svg { display: block; }
 
       const pref = run => { const cand = run.cells.filter(t => !t.frozen); return cand.find(t => swapCells && swapCells.includes(t)) || cand[Math.floor(cand.length / 2)]; };
       const hs = new Set(), vs = new Set();
-      runs.forEach(run => run.cells.forEach(t => (run.dir === 'h' ? hs : vs).add(t)));
+      runs.forEach(run => { if (run.dir !== 'sq') run.cells.forEach(t => (run.dir === 'h' ? hs : vs).add(t)); });
       const creations = [];
       const taken = new Set();
       const want = (t, sp) => { if (t && !t.special && !t.frozen && !taken.has(t)) { taken.add(t); creations.push({ t, sp }); } };
-      runs.forEach(run => { if (run.cells.length >= 5) want(pref(run), 'rainbow'); });
+      runs.forEach(run => { if (run.dir !== 'sq' && run.cells.length >= 5) want(pref(run), 'rainbow'); });
       hs.forEach(t => { if (vs.has(t)) want(t, 'bomb'); });
-      runs.forEach(run => { if (run.cells.length === 4) want(pref(run), run.dir === 'h' ? 'col' : 'row'); });
+      runs.forEach(run => { if (run.dir !== 'sq' && run.cells.length === 4) want(pref(run), run.dir === 'h' ? 'col' : 'row'); });
+      runs.forEach(run => { if (run.dir === 'sq') want(pref(run), 'wing'); });
       creations.forEach(({ t }) => set.delete(t));
 
       const lineOnly = new Set(); // 가로/세로 줄무늬로만 터진 칸 (옆 칸 상자·얼음은 안 깨져요)
-      const queue = [...set].filter(t => t.special);
+      const queue = [...set].filter(t => t.special && t.special !== 'wing');
       const activated = new Set();
       while (queue.length) {
         const t = queue.pop();
@@ -1760,7 +1795,7 @@ svg { display: block; }
         else if (t.big === 'cross3') { for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (Math.abs(r - t.r) <= 1 || Math.abs(c - t.c) <= 1) hit.push(grid[r][c]); }
         else { const rad = t.rad || 2; for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (Math.abs(r - t.r) + Math.abs(c - t.c) <= rad) hit.push(grid[r][c]); }
         const lineFx = t.special === 'row' || t.special === 'col';
-        for (const x of hit) { if (!x) continue; if (!set.has(x) && lineFx) lineOnly.add(x); else if (!lineFx) lineOnly.delete(x); set.add(x); if (x.special && !activated.has(x)) queue.push(x); }
+        for (const x of hit) { if (!x) continue; if (!set.has(x) && lineFx) lineOnly.add(x); else if (!lineFx) lineOnly.delete(x); set.add(x); if (x.special && x.special !== 'wing' && !activated.has(x)) queue.push(x); }
       }
       const crateHits = new Set();
       [...set].forEach(x => { if (x.key) set.delete(x); else if (isFixed(x)) { set.delete(x); crateHits.add(x); } });
@@ -1786,6 +1821,7 @@ svg { display: block; }
       S('pop', chain, set.size);
       if (activated.size) S([...activated].some(t => t.special === 'bomb' || t.special === 'rainbow') ? 'boom' : 'sweep');
       if (survivors.length) S('make');
+      if (survivors.some(s => s.sp === 'wing') && !save.seenWing) { save.seenWing = 1; persist(); setTimeout(() => { if (!ended) plainBubble('<b>날개 젤리</b>가 생겼어요!<br>눌러 보세요. 위아래 젤리가 터지고<br>목표에 도움이 되는 젤리가 하나 더 사라져요', 8000); }, 900); }
       if (survivors.some(s => s.sp === 'rainbow') && !save.seenRb) { save.seenRb = 1; persist(); showToast('무지개 젤리! 아무 젤리와 바꾸면 그 색이 모두 사라져요'); }
       if (goals.filter(g => g.got >= g.n).length > doneBefore) S('goal');
       goals.forEach((g, i) => { g.pulse = !prev[i] && g.got >= g.n; });
@@ -2037,7 +2073,7 @@ svg { display: block; }
   }
 
   async function trySwap(a, b) {
-    if (busy || ended || isFixed(a) || isFixed(b)) return;
+    if (busy || ended || isFixed(a) || isFixed(b) || a.special === 'wing' || b.special === 'wing') return;
     hideFinger();
     busy = true;
     clearHint(); clearSel();
@@ -2066,6 +2102,47 @@ svg { display: block; }
     }
     endCheck();
     if (!ended) setTimeout(ctxAfterMove, 350);
+  }
+
+  function wingTarget() {
+    const ok = x => x && !isFixed(x) && !x.key && !x.special;
+    const pick = a => a.length ? a[rnd(a.length)] : null;
+    const all = grid.flat();
+    const rank = { k: 0, x: 1, i: 1, g: 1, c: 2 };
+    const gs = goals.filter(g => g.got < g.n).sort((a, b) => (rank[a.k] ?? 3) - (rank[b.k] ?? 3));
+    for (const g of gs) {
+      let c = [];
+      if (g.k === 'k') all.forEach(x => { if (x && x.key && x.r < R - 1) { const b = grid[x.r + 1][x.c]; if (ok(b)) c.push(b); } });
+      else if (g.k === 'i' || g.k === 'x' || g.k === 'g') all.forEach(x => {
+        if (x && (g.k === 'i' ? x.frozen : g.k === 'x' ? x.crate : x.goo)) [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([a, b]) => { const n = grid[x.r + a] && grid[x.r + a][x.c + b]; if (ok(n) && !c.includes(n)) c.push(n); });
+      });
+      else if (g.k === 'c') c = all.filter(x => ok(x) && x.type === g.t);
+      const p = pick(c); if (p) return p;
+    }
+    return pick(all.filter(ok));
+  }
+  async function useWing(t) {
+    if (busy || ended || !over.hidden) return;
+    busy = true; hideFinger(true); clearHint(); clearSel(); S('make');
+    const r0 = t.r, c0 = t.c;
+    const fl = document.createElement('div'); fl.className = 'wingfly';
+    fl.style.transform = 'translate(' + (c0 * cell) + 'px,' + (r0 * cell) + 'px)';
+    fl.appendChild(t.el.firstChild.cloneNode(true)); field.appendChild(fl);
+    const ex = [t];
+    [grid[r0 - 1] && grid[r0 - 1][c0], grid[r0 + 1] && grid[r0 + 1][c0]].forEach(x => { if (x && !isFixed(x) && !x.key) ex.push(x); });
+    FX.ring((c0 + 0.5) * cell, (r0 + 0.5) * cell, '#FFFFFF', cell * 1.8);
+    await resolve(null, ex);
+    let tg = wingTarget();
+    if (tg) {
+      void fl.offsetWidth;
+      fl.style.transform = 'translate(' + (tg.c * cell) + 'px,' + (tg.r * cell) + 'px)';
+      S('sweep');
+      await sleep(520);
+      fl.remove();
+      FX.ring((tg.c + 0.5) * cell, (tg.r + 0.5) * cell, '#FFFFFF', cell * 1.6);
+      if (grid[tg.r] && grid[tg.r][tg.c] === tg) await resolve(null, [tg]);
+    } else fl.remove();
+    endCheck();
   }
 
   async function useHammer(t) {
@@ -2647,6 +2724,7 @@ svg { display: block; }
     if (!t) return;
     clearHint();
     if (hammerMode) { useHammer(t); return; }
+    if (t.special === 'wing') { useWing(t); return; }
     down = { t, x: e.clientX, y: e.clientY, done: false };
     try { field.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
   });
