@@ -675,7 +675,7 @@ svg { display: block; }
 .evt.pop .evcard { width: min(100%, 520px); max-height: calc(100dvh - 32px); overflow-y: auto; box-sizing: border-box; background: var(--bg); border-radius: 26px; padding: 14px 14px 18px; box-shadow: 0 6px 0 rgba(0,0,0,0.14); outline: 2px dashed var(--stitch); outline-offset: -6px; }
 .mside { position: fixed; top: 124px; z-index: 6; display: flex; flex-direction: column; gap: 6px; }
 .mside.l { left: 4px; } .mside.r { right: 4px; }
-.mside.br { flex-direction: row; gap: 2px; top: auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: 4px; }
+.mside.br { flex-direction: row; gap: 16px; top: auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: 4px; }
 #room { z-index: 57; }
 .msb { position: relative; width: 62px; border: 0; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; color: var(--ink); }
 .msb .mi { width: 58px; height: 58px; display: grid; place-items: center; }
@@ -684,7 +684,7 @@ svg { display: block; }
 .msb .sdot { position: absolute; top: 0; right: 2px; width: 13px; height: 13px; border-radius: 50%; background: #FF7FA6; border: 2px solid var(--paper); }
 @media (min-width: 900px) {
   .mside { top: 150px; gap: 14px; }
-  .mside.l { left: 24px; } .mside.r { right: 24px; } .mside.br { top: auto; right: 24px; bottom: 24px; }
+  .mside.l { left: 24px; } .mside.r { right: 24px; } .mside.br { gap: 28px; top: auto; right: 24px; bottom: 24px; }
   .msb { width: 112px; gap: 5px; }
   .msb .mi { width: 104px; height: 104px; }
   .msb .mi img { width: 104px; height: 104px; filter: drop-shadow(4px 0 0 #fff) drop-shadow(-4px 0 0 #fff) drop-shadow(0 4px 0 #fff) drop-shadow(0 -4px 0 #fff); }
