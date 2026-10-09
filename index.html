@@ -2037,7 +2037,7 @@ svg { display: block; }
     save.coins -= cost; save.hearts = Math.min(HEART_MAX, save.hearts + k); persist(); S('coin'); renderHearts(); updateHud(false); drawHeartShop();
   });
   function showKeyTutorial() {
-    if (save.seenKey || ended || !cfg || !(cfg.keyN > 0)) return;
+    if ((save.seenKey && level !== 14) || ended || !cfg || !(cfg.keyN > 0)) return;
     clearHint();
     showOver('<h3>열쇠 젤리</h3><img src="' + obsSrc('key0') + '" alt="" style="width:84px;height:84px;object-fit:contain">' +
       '<p>열쇠 젤리는 <b>맨 아래 줄</b>까지 내려보내면 열쇠를 얻어요!<br>열쇠 아래에 있는 젤리를 터뜨리면 열쇠가 내려가요.<br>열쇠 젤리는 매치로 터지지 않아요.</p>' +
@@ -2293,7 +2293,7 @@ svg { display: block; }
     updateHud(false);
     showToast(level + '단계 · ' + TIER_NAME[tierOf(level)] + (level === ICE_LV[0] ? ' · 얼음 칸이 나왔어요!' : level === CRATE_LV[0] ? ' · 상자가 나왔어요!' : level === KEY_LV[0] ? ' · 열쇠 젤리를 맨 아래로 내려요!' : level === GOO_LV[0] ? ' · 얼룩이 나왔어요! 방치하면 번져요' : R * C > prevCells && grid.length ? ' · 보드가 커졌어요!' : ''));
     scheduleHint();
-    if (cfg.keyN > 0 && !save.seenKey && cover.hidden && lvEl.hidden) setTimeout(showKeyTutorial, 500);
+    if (cfg.keyN > 0 && (!save.seenKey || level === 14) && cover.hidden && lvEl.hidden) setTimeout(showKeyTutorial, 500);
   }
 
   /* ---------- input ---------- */
