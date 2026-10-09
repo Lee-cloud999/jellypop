@@ -1946,7 +1946,6 @@ svg { display: block; }
 
   function loseLevel() {
     ended = true; busy = true;
-    spendHeart();
     S('lose');
     clearHint();
     updateHud(false);
@@ -1993,7 +1992,7 @@ svg { display: block; }
     if (heartHalf() !== lastHalf) { lastHalf = heartHalf(); renderHearts(); return; }
     const tt = save.hearts >= HEART_MAX ? 'MAX' : mmss(heartLeftMs()); document.querySelectorAll('.energy .et').forEach(t => { t.textContent = tt; });
     const o = over && !over.hidden && over.dataset.noheart;
-    if (o) { const x = $('noHeartT'); if (x) x.textContent = mmss(heartLeftMs()); if (save.hearts > 0) { delete over.dataset.noheart; hideOver(); if (pendingLv) { const n = pendingLv; pendingLv = 0; setupLevel(n); } } }
+    if (o) { const x = $('noHeartT'); if (x) x.textContent = mmss(heartLeftMs()); if (save.hearts > 0) { delete over.dataset.noheart; hideOver(); if (pendingLv) { const n = pendingLv; pendingLv = 0; tryStart(n); } } }
   }
   const levelCleared = n => !!(save.stars && save.stars[n]);
   function showNoHeart(n) {
@@ -2001,7 +2000,7 @@ svg { display: block; }
     if (typeof closeMap === 'function') closeMap();
     ended = true; busy = true; clearHint();
     const can = save.coins >= HEART_COST;
-    showOver('<h3>하트가 없어요</h3><div style="font-size:15px">다음 하트까지 <b id="noHeartT">' + mmss(heartLeftMs()) + '</b></div>' +
+    showOver('<h3>하트가 없어요</h3><p>하트가 없으면 스테이지를 시작할 수 없어요.</p><div style="font-size:15px">다음 하트까지 <b id="noHeartT">' + mmss(heartLeftMs()) + '</b></div>' +
       '<div class="row"><button class="btn primary wide" type="button" data-act="heartbuy"' + (can ? '' : ' disabled') + ' style="min-height:52px;font-size:19px;justify-content:center">하트 1개 충전 &nbsp;' + icoImg('coin', 22) + ' ' + HEART_COST + '</button></div>' +
       (can ? '' : '<p style="margin:0;font-size:13px">코인이 부족해요. 상점에서 채울 수 있어요.</p>') +
       '<div class="row"><button class="btn" type="button" data-act="heartwait">기다릴게요</button><button class="btn" type="button" data-act="shop">상점</button></div>');
@@ -2062,15 +2061,14 @@ svg { display: block; }
   function tryStart(n) {
     heartRegen();
     n = Math.min(MAX_LEVEL, Math.max(1, n));
-    if (save.hearts > 0 || levelCleared(n)) { delete over.dataset.noheart; setupLevel(n); return true; }
-    showNoHeart(n); return false;
+    if (save.hearts <= 0) { showNoHeart(n); return false; }
+    delete over.dataset.noheart; spendHeart(); setupLevel(n); return true; // 스테이지를 시작할 때마다 하트 1개
   }
   function spendHeart() {
-    if (levelCleared(level) || save.hearts <= 0) { heartSpent = false; return; }
+    if (save.hearts <= 0) return;
     if (save.hearts >= HEART_MAX) save.hAt = Date.now();
-    save.hearts--; heartSpent = true; persist(); renderHearts();
+    save.hearts--; persist(); renderHearts();
   }
-  function refundHeart() { if (heartSpent) { heartSpent = false; save.hearts = Math.min(HEART_MAX, save.hearts + 1); persist(); renderHearts(); } }
 
   function openLevels() { openMap(); }
 
@@ -2185,11 +2183,11 @@ svg { display: block; }
       if (save.coins < HEART_COST) return;
       save.coins -= HEART_COST; save.hearts = Math.min(HEART_MAX, save.hearts + 1); persist(); S('coin'); renderHearts(); updateHud(false);
       delete over.dataset.noheart; hideOver();
-      if (pendingLv) { const n = pendingLv; pendingLv = 0; setupLevel(n); }
+      if (pendingLv) { const n = pendingLv; pendingLv = 0; tryStart(n); }
     }
     else if (act === 'retryyes') {
       hideOver();
-      if (save.hearts > 0) { spendHeart(); setupLevel(level); heartSpent = false; } else tryStart(level);
+      tryStart(level);
     }
     else if (act === 'retryno') { hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'hshop1' || act === 'hshopall') {
@@ -2222,7 +2220,7 @@ svg { display: block; }
     else if (act === 'close') { hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'more') {
       if (save.coins < CONT.cost) return;
-      save.coins -= CONT.cost; moves += CONT.moves; refundHeart(); persist();
+      save.coins -= CONT.cost; moves += CONT.moves; persist();
       S('coin');
       ended = false; busy = false;
       hideOver(); updateHud(false); showToast('이동 +' + CONT.moves); scheduleHint();
@@ -2752,10 +2750,7 @@ svg { display: block; }
     if (navBlocked()) return;
     S('click');
     if (ended) { openMap(); return; }
-    if (levelCleared(level)) { // 이미 깬 단계는 하트를 잃지 않아요
-      openConfirm({ title: '게임을 그만두시겠어요?', text: '지금 하던 단계는 저장되지 않고, 다시 하면 처음부터 시작해요.', yes: '계속', no: '취소', onYes: openMap }); return;
-    }
-    openConfirm({ title: '게임을 그만두시겠어요?', text: '지금 하던 게임은 저장되지 않고, 하트 1개를 잃게 돼요.', yes: '계속', no: '취소', onYes: () => { spendHeart(); heartSpent = false; openMap(); } });
+    openConfirm({ title: '게임을 그만두시겠어요?', text: '지금 하던 게임은 저장되지 않고, 사용한 하트는 돌려받지 못해요.', yes: '계속', no: '취소', onYes: openMap });
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !evEl.hidden && !spinning) { closeEvent(); e.stopImmediatePropagation(); } });
   evWeek(); persist(); evDotSync();
@@ -2926,13 +2921,12 @@ svg { display: block; }
   $('retryBtn').addEventListener('click', () => {
     if (busy && !ended) { showToast('잠시 후에 눌러주세요'); return; }
     heartRegen();
-    if (levelCleared(level)) { tryStart(level); return; } // 이미 깬 단계는 하트를 안 써요
     clearHint();
     showOver('<h3>다시 하기</h3><p>하트 1개를 잃게 돼요.<br>계속하시겠어요?</p><div class="row"><button class="btn primary" type="button" data-act="retryyes">계속</button><button class="btn" type="button" data-act="retryno">취소</button></div>');
   });
 
   if (!(save.track >= 0 && save.track < A.TRACKS.length)) save.track = 0;
-  tryStart(Math.min(save.level || 1, save.unlocked || 1));
+  setupLevel(Math.min(save.level || 1, save.unlocked || 1));
   renderHearts(); setInterval(() => heartTick(false), 1000);
   document.addEventListener('click', e => { if (!e.target.closest('.energy .eplus')) return; S('click'); if (save.hearts >= HEART_MAX) { showToast('하트가 가득 찼어요'); return; } if (busy && !ended) return; showHeartShop(); });
 })();
