@@ -1483,7 +1483,7 @@ svg { display: block; }
   new ResizeObserver(measure).observe(field);
 
   /* ---------- board logic ---------- */
-  const same = (a, b) => !!b && !b.special && !b.crate && !b.key && !b.goo && b.type === a.type;
+  const same = (a, b) => !!b && !b.special && !b.crate && !b.key && b.type === a.type;
 
   function findRuns() {
     const runs = [];
@@ -1491,7 +1491,7 @@ svg { display: block; }
       let c = 0;
       while (c < C) {
         const t = grid[r][c];
-        if (!t || t.special || t.crate || t.key || t.goo) { c++; continue; }
+        if (!t || t.special || t.crate || t.key) { c++; continue; }
         let e = c + 1;
         while (e < C && same(t, grid[r][e])) e++;
         if (e - c >= 3) { const cells = []; for (let k = c; k < e; k++) cells.push(grid[r][k]); runs.push({ dir: 'h', cells }); }
@@ -1502,7 +1502,7 @@ svg { display: block; }
       let r = 0;
       while (r < R) {
         const t = grid[r][c];
-        if (!t || t.special || t.crate || t.key || t.goo) { r++; continue; }
+        if (!t || t.special || t.crate || t.key) { r++; continue; }
         let e = r + 1;
         while (e < R && same(t, grid[e][c])) e++;
         if (e - r >= 3) { const cells = []; for (let k = r; k < e; k++) cells.push(grid[k][c]); runs.push({ dir: 'v', cells }); }
@@ -1514,7 +1514,7 @@ svg { display: block; }
 
   function lineLen(r, c) {
     const t = grid[r][c];
-    if (!t || t.special || t.crate || t.key || t.goo) return 0;
+    if (!t || t.special || t.crate || t.key) return 0;
     let h = 1, v = 1, i;
     for (i = c - 1; i >= 0 && same(t, grid[r][i]); i--) h++;
     for (i = c + 1; i < C && same(t, grid[r][i]); i++) h++;
