@@ -121,6 +121,11 @@ svg { display: block; }
 .hshop .hcard { width: min(100%, 360px); background: var(--bg); border-radius: 28px; padding: 22px 18px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,.28); }
 .hshop h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 34px; line-height: 1.15; }
 .hshop p { margin: 0; color: var(--muted); }
+.tour .trow { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; font-size: 15px; line-height: 1.35; }
+.tour .trow b { font-size: 16px; }
+.tour .ti { flex: none; width: 46px; height: 46px; display: grid; place-items: center; }
+.tour .ti img { width: 46px; height: 46px; object-fit: contain; }
+.tour p { font-size: 14px; }
 .hshop .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; }
 .energy { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 2px 0 -2px; min-height: 30px; }
 .energy img { width: 26px; height: 26px; display: block; }
@@ -2099,6 +2104,24 @@ svg { display: block; }
     }
   }
   let ctxPending = null;
+  // 특수 젤리끼리 나란히 놓였을 때: 바꾸면 더 크게 터진다고 한 번씩 알려줘요
+  function comboFind() {
+    const sp = t => t && t.special && t.special !== 'wing';
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) for (const [dr, dc] of [[0, 1], [1, 0]]) {
+      const a = grid[r][c], b = grid[r + dr] && grid[r + dr][c + dc];
+      if (!sp(a) || !sp(b)) continue;
+      const line = x => x.special === 'row' || x.special === 'col';
+      let key, txt;
+      if (a.special === 'rainbow' && b.special === 'rainbow') { key = 'rr'; txt = '무지개끼리 바꾸면<br><b>판 전체</b>가 사라져요!'; }
+      else if (a.special === 'rainbow' || b.special === 'rainbow') { key = 'rx'; txt = '무지개를 줄무늬·폭탄과 바꾸면<br>그 색 젤리와 <b>특수 효과가 함께</b> 터져요!'; }
+      else if (line(a) && line(b)) { key = 'll'; txt = '줄무늬끼리 바꾸면<br><b>가로·세로가 한꺼번에</b> 터져요!'; }
+      else if (a.special === 'bomb' && b.special === 'bomb') { key = 'bb'; txt = '폭탄끼리 바꾸면<br><b>아주 크게</b> 터져요!'; }
+      else { key = 'bl'; txt = '폭탄과 줄무늬를 바꾸면<br><b>굵은 십자</b>로 터져요!'; }
+      if (save.combos && save.combos[key]) continue;
+      return { a, b, key, txt };
+    }
+    return null;
+  }
   // N개를 한 줄로 맞추는 한 수 (줄무늬 4개 / 무지개 5개 시연)
   function lineDemoFind(len) {
     const cands = [];
@@ -2149,6 +2172,15 @@ svg { display: block; }
   function ctxAfterMove() {
     if (ended || busy || !over.hidden || !cover.hidden || !lvEl.hidden || !cfg) return;
     if (ctxPending) { const k = ctxPending; ctxPending = null; if (!fingerOn) { specialTip(k); return; } }
+    if (!fingerOn) {
+      const cb = comboFind();
+      if (cb) {
+        if (!save.combos || typeof save.combos !== 'object') save.combos = {};
+        save.combos[cb.key] = 1; persist();
+        fingerDemo([cb.a.r, cb.a.c, cb.b.r, cb.b.c], '<b>특수 젤리끼리</b> 나란히 놓였어요!<br>' + cb.txt, null, 6500);
+        return;
+      }
+    }
     const sh = k => { ctxShown[k] = 1; };
     if (level === 2 && madeMoves >= 1 && !ctxShown.ham) {
       sh('ham');
@@ -2417,10 +2449,12 @@ svg { display: block; }
       '<div class="big">' + fmt(score) + '점</div>' +
       '<p>남은 이동 ' + movesLeft + '개 · 보너스 +' + fmt(bonus) + '</p>' +
       (stars < 3 ? '<p class="starhint">별 3개는 이동 ' + cfg.s3 + '개 이상 남기면 받아요</p>' : '') +
+      (!save.seenStarTip ? '<p class="starhint">이동을 많이 남길수록 별과 보너스가 늘어요!<br>별은 <b>털실방</b>에서 가구를 놓는 데 써요.</p>' : '') +
       '<div class="rw"><span>코인 +' + reward + (first ? ' (첫 클리어 +30)' : '') + '</span>' + gifts.map(g => '<span>' + g + '</span>').join('') + '</div>' +
       '<div class="row"><button class="btn primary" type="button" data-act="next">' + (level >= MAX_LEVEL ? '단계 고르기' : '다음 단계') + '</button><button class="btn" type="button" data-act="retry">다시 하기</button></div>'
     );
     over.classList.add('winfx');
+    if (!save.seenStarTip) { save.seenStarTip = 1; persist(); }
     winAfter(stars);
   }
 
@@ -3430,6 +3464,26 @@ svg { display: block; }
     if (busy && !ended) return;
     clearHint(); hammerMode = false; field.classList.remove('hammering'); tip.hidden = true;
     mapMsg = null; lvEl.hidden = false; mapRender(true); evDotSync(); roomDotSync();
+    if (!save.menuTour) { save.menuTour = 1; persist(); setTimeout(showMenuTour, 500); }
+  }
+  // 처음 털실 여행(지도)에 들어오면 메뉴가 무엇인지 한 번 알려줘요
+  function showMenuTour() {
+    if (lvEl.hidden) { save.menuTour = 0; return; }
+    const ico = q => { const b = lvEl.querySelector(q + ' .mi'); return b ? b.innerHTML : ''; };
+    const rows = [
+      [ico('[data-evopen="daily"]'), '출석', '매일 들어오면 보상을 받아요'],
+      [ico('[data-evopen="wheel"]'), '룰렛', '룰렛권으로 돌려서 선물을 받아요'],
+      [ico('[data-evopen="mission"]'), '이벤트', '미션을 채우면 보상이 있어요'],
+      [ico('#mapShop'), '상점', '코인으로 아이템과 하트를 살 수 있어요'],
+      [ico('#mapRoom'), '털실방', '별로 가구를 놓아 방을 꾸며요']
+    ];
+    const el = document.createElement('div'); el.className = 'hshop tour';
+    el.innerHTML = '<div class="hcard"><h3>털실 여행 안내</h3>' +
+      rows.map(r => '<div class="trow"><span class="ti">' + r[0] + '</span><span><b>' + r[1] + '</b><br>' + r[2] + '</span></div>').join('') +
+      '<p>길 위의 <b>보상 상자</b>는 그 단계까지 깨면 열 수 있어요.<br>메뉴의 <b>빨간 점</b>은 받을 보상이 있다는 뜻이에요.</p>' +
+      '<div class="row"><button class="btn primary" type="button" style="min-height:52px;font-size:19px">알겠어요</button></div></div>';
+    el.addEventListener('click', e => { if (e.target.closest('button') || e.target === el) el.remove(); });
+    document.body.appendChild(el);
   }
   function closeMap() { lvEl.hidden = true; }
   $('mapRoom').addEventListener('click', () => { S('click'); openRoom(); });
