@@ -1303,7 +1303,7 @@ svg { display: block; }
     $('shuffleImg').src = ITEMIMG[save.shuf > 0 ? 'shuf_on' : 'shuf_off'];
     bHammer.classList.toggle('on', hammerMode);
     bHammer.disabled = ended;
-    bMoves.disabled = false;
+    bMoves.disabled = ended;
     bShuffle.disabled = ended;
     if (bumpScore) {
       const sc = elScore.parentElement;
