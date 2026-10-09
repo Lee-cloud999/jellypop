@@ -1934,13 +1934,15 @@ svg { display: block; }
     if (save.hearts >= HEART_MAX) save.hAt = now;
     return ch;
   }
+  const heartHalf = () => save.hearts < HEART_MAX && heartLeftMs() <= HEART_MS / 2; // 절반 이상 차면 반 하트
+  let lastHalf = false;
   const heartLeftMs = () => save.hearts >= HEART_MAX ? 0 : Math.max(0, HEART_MS - (Date.now() - save.hAt));
   const mmss = ms => { const t = Math.ceil(ms / 1000); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
   function renderHearts() {
     const els = document.querySelectorAll('.energy'); if (!els.length) return;
     let h = '';
     for (let i = 0; i < HEART_MAX; i++) {
-      const k = i < save.hearts ? 'f' : (i === save.hearts ? 'h' : 'e');
+      const k = i < save.hearts ? 'f' : (i === save.hearts && heartHalf() ? 'h' : 'e');
       h += '<img src="' + HEART_IMG[k] + '" alt="">';
     }
     h += '<span class="et"></span><button class="eplus" type="button" aria-label="하트 충전">+</button>';
@@ -1949,6 +1951,7 @@ svg { display: block; }
   function heartTick(force) {
     const ch = heartRegen();
     if (ch) { persist(); renderHearts(); return; }
+    if (heartHalf() !== lastHalf) { lastHalf = heartHalf(); renderHearts(); return; }
     const tt = save.hearts >= HEART_MAX ? 'MAX' : mmss(heartLeftMs()); document.querySelectorAll('.energy .et').forEach(t => { t.textContent = tt; });
     const o = over && !over.hidden && over.dataset.noheart;
     if (o) { const x = $('noHeartT'); if (x) x.textContent = mmss(heartLeftMs()); if (save.hearts > 0) { delete over.dataset.noheart; hideOver(); if (pendingLv) { const n = pendingLv; pendingLv = 0; setupLevel(n); } } }
