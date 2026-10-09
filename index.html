@@ -1898,7 +1898,7 @@ svg { display: block; }
     $('roomStars').innerHTML = STAR_SM + ' ' + starsLeft();
     sceneEl.innerHTML = DECOR.filter(isOpen).map(d => {
       const v = vOf(d.id), on = v >= 0, sel = selDecor === d.id;
-      const show = on ? v : (sel ? selVar : 0);
+      const show = sel ? selVar : (on ? v : 0);
       return '<button class="slot' + (on ? '' : ' empty') + (sel ? ' sel' : '') + '" type="button" data-id="' + d.id + '" aria-label="' + d.name + (on ? ' (놓음)' : ' (별 ' + d.cost + '개)') + '" style="left:' + d.x + '%;bottom:' + (100 - d.y) + '%;width:' + d.w + '%;z-index:' + d.z + '">' +
         '<img src="' + imgOf(d.id, show) + '" alt="" draggable="false">' + (on ? '' : '<span class="cost">★' + d.cost + '</span>') + '</button>';
     }).join('');
@@ -1913,8 +1913,9 @@ svg { display: block; }
         : '<div><b>방이 완성됐어요!</b><span>놓은 것을 눌러 모양을 바꿔 보세요</span></div>';
     } else {
       const placed = vOf(sel.id) >= 0, need = sel.cost - starsLeft(), cur = placed ? vOf(sel.id) : selVar;
-      let h = '<div><b>' + sel.name + '</b><span>' + (placed ? '마음에 드는 모양을 골라요 · 바꾸는 건 공짜예요' : need > 0 ? '별이 ' + need + '개 더 필요해요' : '모양을 고르고 놓아 보세요') + '</span></div>';
+      let h = '<div><b>' + sel.name + '</b><span>' + (placed ? '모양을 고르고 적용을 눌러요 · 바꾸는 건 공짜예요' : need > 0 ? '별이 ' + need + '개 더 필요해요' : '모양을 고르고 놓아 보세요') + '</span></div>';
       if (!placed) h += '<button class="btn primary" type="button" id="roomPlace"' + (need > 0 ? ' disabled' : '') + '>' + STAR_SM + ' ' + sel.cost + ' 놓기</button>';
+      else h += '<button class="btn primary" type="button" id="roomApply"' + (selVar === vOf(sel.id) ? ' disabled' : '') + '>적용</button>';
       h += '<div class="vars">' + [0, 1, 2].map(v => '<button class="var' + (v === cur ? ' on' : '') + '" type="button" data-v="' + v + '" aria-label="' + sel.name + ' 모양 ' + (v + 1) + (v === cur ? ' (선택됨)' : '') + '"><img src="' + imgOf(sel.id, v) + '" alt=""></button>').join('') + '</div>';
       rpanel.innerHTML = h;
     }
@@ -1954,12 +1955,15 @@ svg { display: block; }
   });
   rpanel.addEventListener('click', e => {
     if (e.target.closest('#roomPlace') && selDecor) { placeDecor(selDecor); return; }
+    if (e.target.closest('#roomApply') && selDecor) {
+      if (vOf(selDecor) >= 0 && vOf(selDecor) !== selVar) { save.placed[selDecor] = selVar + 1; persist(); S('goal'); const id = selDecor; renderRoom(); popDecor(id); }
+      return;
+    }
     const v = e.target.closest('.var');
     if (!v || !selDecor) return;
     const n = parseInt(v.dataset.v, 10);
     S('click');
-    if (vOf(selDecor) >= 0) { if (vOf(selDecor) !== n) { save.placed[selDecor] = n + 1; persist(); S('goal'); const id = selDecor; renderRoom(); popDecor(id); } }
-    else { selVar = n; renderRoom(); }
+    selVar = n; renderRoom();
   });
   $('roomBack').addEventListener('click', () => { S('click'); closeRoom(); });
   // 하단 메뉴: 진행 중에는 창이 열려 있으면 막고, 클리어/실패 창이 떠 있을 때는 누를 수 있어요
