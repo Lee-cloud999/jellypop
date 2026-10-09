@@ -1387,20 +1387,20 @@ svg { display: block; }
   const PAID = {
     coin: [
       { id: 'c1', name: '코인 300', desc: '코인 300개', price: 1100, r: { coins: 300 }, ic: ['COIN'] },
-      { id: 'c2', name: '코인 700', desc: '코인 700개', price: 2200, r: { coins: 700 }, ic: ['COIN'] }
+      { id: 'c2', name: '코인 660', desc: '코인 660개', price: 2200, r: { coins: 660 }, ic: ['COIN'] }
     ],
     cpack: [
-      { id: 'cp1', name: '코인팩 소', desc: '코인 1,500 + 보너스 100', price: 3300, r: { coins: 1600 }, ic: ['COIN', 'COIN'] },
-      { id: 'cp2', name: '코인팩 대', desc: '코인 3,500 + 보너스 500', price: 6600, r: { coins: 4000 }, ic: ['COIN', 'COIN', 'COIN'] }
+      { id: 'cp1', name: '코인팩 소', desc: '코인 1,000 + 보너스 50', price: 3300, r: { coins: 1050 }, ic: ['COIN', 'COIN'] },
+      { id: 'cp2', name: '코인팩 대', desc: '코인 2,000 + 보너스 300', price: 6600, r: { coins: 2300 }, ic: ['COIN', 'COIN', 'COIN'] }
     ],
     ipack: [
-      { id: 'ip1', name: '응원 팩', desc: '망치 3 · 이동 3 · 섞기 3', price: 2200, r: { hammers: 3, mv: 3, shuf: 3 }, ic: ['hammer', 'mv', 'shuf'] },
-      { id: 'ip2', name: '든든 팩', desc: '망치 8 · 이동 8 · 섞기 8', price: 5500, r: { hammers: 8, mv: 8, shuf: 8 }, ic: ['hammer', 'mv', 'shuf'] }
+      { id: 'ip1', name: '응원 팩', desc: '망치 4 · 이동 3 · 섞기 5', price: 2200, r: { hammers: 4, mv: 3, shuf: 5 }, ic: ['hammer', 'mv', 'shuf'] },
+      { id: 'ip2', name: '든든 팩', desc: '망치 10 · 이동 10 · 섞기 12', price: 5500, r: { hammers: 10, mv: 10, shuf: 12 }, ic: ['hammer', 'mv', 'shuf'] }
     ],
     item: [
       { id: 'i1', name: '망치 5개', desc: '젤리 하나를 터뜨려요', price: 1100, r: { hammers: 5 }, ic: ['hammer'] },
-      { id: 'i2', name: '이동 5개', desc: '이동 +3 이동권 5개', price: 1100, r: { mv: 5 }, ic: ['mv'] },
-      { id: 'i3', name: '섞기 5개', desc: '젤리를 모두 섞어요', price: 1100, r: { shuf: 5 }, ic: ['shuf'] }
+      { id: 'i2', name: '이동 4개', desc: '이동 +3 이동권 4개', price: 1100, r: { mv: 4 }, ic: ['mv'] },
+      { id: 'i3', name: '섞기 8개', desc: '젤리를 모두 섞어요', price: 1100, r: { shuf: 8 }, ic: ['shuf'] }
     ]
   };
   const wonFmt = n => '₩' + n.toLocaleString('ko-KR');
