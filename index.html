@@ -627,8 +627,8 @@ svg { display: block; }
 .mleg span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .mleg i { width: 14px; height: 14px; border-radius: 50%; border: 3px solid; background: var(--paper); display: inline-block; }
 .mleg i.t0 { border-color: #8FD9BC; } .mleg i.t1 { border-color: #FFD982; } .mleg i.t2 { border-color: #FF8FB1; }
-#mmsg { position: sticky; top: 100px; z-index: 5; width: min(100%, 420px); height: 0; overflow: visible; }
-#mmsg .evmsg { margin-top: 4px; box-shadow: 0 4px 0 var(--shade), 0 8px 18px rgba(0,0,0,0.12); }
+#mmsg { position: sticky; top: 100px; z-index: 8; width: min(calc(100% - 16px), 420px); height: 0; overflow: visible; }
+#mmsg .evmsg { pointer-events: none; margin-top: 4px; box-shadow: 0 4px 0 var(--shade), 0 8px 18px rgba(0,0,0,0.12); }
 .mapwrap { position: relative; width: 100%; flex: none; margin-top: 6px; background: #E2CDFA; overflow: hidden; }
 .mapwrap .mbgt { position: absolute; left: 50%; background-size: 100% 100%; background-repeat: no-repeat; pointer-events: none; }
 .mapwrap .mdc { position: absolute; pointer-events: none; max-width: none; }
