@@ -1670,6 +1670,7 @@ svg { display: block; }
   function measure() {
     fitBoard();
     cell = field.clientWidth / C;
+    field.style.height = (cell * R) + 'px'; // 사파리에서 비율 계산이 늦어도 판 높이가 딱 맞게
     field.style.setProperty('--ar', C / R);
     field.style.setProperty('--cell', cell + 'px');
     FX.resize();
