@@ -2043,6 +2043,15 @@ svg { display: block; }
       '<p>열쇠 젤리는 <b>맨 아래 줄</b>까지 내려보내면 열쇠를 얻어요!<br>열쇠 아래에 있는 젤리를 터뜨리면 열쇠가 내려가요.<br>열쇠 젤리는 매치로 터지지 않아요.</p>' +
       '<div class="row"><button class="btn primary" type="button" data-act="keyok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
   }
+  function showHammerTutorial() {
+    if (level !== 2 || ended) return;
+    let gift = '';
+    if (!save.gaveHammer2) { save.gaveHammer2 = 1; save.hammers++; persist(); updateHud(false); gift = '<p style="font-weight:800">망치 +1을 선물로 받았어요!</p>'; }
+    clearHint();
+    showOver('<h3>망치 아이템</h3>' + ic('hammer', 84) + gift +
+      '<p>아래의 <b>망치</b> 버튼을 누른 다음,<br>없애고 싶은 젤리를 누르면 그 젤리가 바로 터져요.<br>막혔을 때 사용해 보세요!</p>' +
+      '<div class="row"><button class="btn primary" type="button" data-act="hamok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
+  }
   function showIceTutorial() {
     if ((save.seenIce && level !== 3) || ended || !cfg || !(cfg.iceN > 0)) return;
     clearHint();
@@ -2190,6 +2199,7 @@ svg { display: block; }
     }
     
     else if (act === 'keyok') { save.seenKey = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
+    else if (act === 'hamok') { hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'iceok') { save.seenIce = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'heartwait') { delete over.dataset.noheart; hideOver(); openLevels(); }
     else if (act === 'pay') {
@@ -2302,6 +2312,7 @@ svg { display: block; }
     showToast(level + '단계 · ' + TIER_NAME[tierOf(level)] + (level === ICE_LV[0] ? ' · 얼음 칸이 나왔어요!' : level === CRATE_LV[0] ? ' · 상자가 나왔어요!' : level === KEY_LV[0] ? ' · 열쇠 젤리를 맨 아래로 내려요!' : level === GOO_LV[0] ? ' · 얼룩이 나왔어요! 방치하면 번져요' : R * C > prevCells && grid.length ? ' · 보드가 커졌어요!' : ''));
     scheduleHint();
     if (cfg.keyN > 0 && (!save.seenKey || level === 14) && cover.hidden && lvEl.hidden) setTimeout(showKeyTutorial, 500);
+    else if (level === 2 && cover.hidden && lvEl.hidden) setTimeout(showHammerTutorial, 500);
     else if (cfg.iceN > 0 && (!save.seenIce || level === 3) && cover.hidden && lvEl.hidden) setTimeout(showIceTutorial, 500);
   }
 
