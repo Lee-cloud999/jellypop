@@ -1948,6 +1948,19 @@ svg { display: block; }
   }
   const adjacent = (a, b) => Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1;
 
+  // 얼음·상자 칸은 못 움직여요: 살짝 밀렸다가 소리와 함께 제자리로 돌아와요
+  function nudge(t, dc, dr) {
+    if (t.nudging) return;
+    t.nudging = true; S('bad');
+    const d = cell * 0.16, x = dc * d, y = dr * d;
+    const els = [...t.el.children];
+    const kf = (dc || dr)
+      ? [{ transform: 'translate(0,0)' }, { transform: 'translate(' + x + 'px,' + y + 'px)', offset: 0.35 }, { transform: 'translate(' + (-x * 0.35) + 'px,' + (-y * 0.35) + 'px)', offset: 0.7 }, { transform: 'translate(0,0)' }]
+      : [{ transform: 'translate(0,0)' }, { transform: 'translate(' + d * 0.5 + 'px,0)' }, { transform: 'translate(' + (-d * 0.5) + 'px,0)' }, { transform: 'translate(0,0)' }];
+    els.forEach(el => { if (el.animate) el.animate(kf, { duration: 320, easing: 'ease-out' }); });
+    setTimeout(() => { t.nudging = false; }, 340);
+  }
+
   let down = null;
   field.addEventListener('pointerdown', e => {
     if (busy || ended || !over.hidden) return;
@@ -1955,7 +1968,6 @@ svg { display: block; }
     if (!t) return;
     clearHint();
     if (hammerMode) { useHammer(t); return; }
-    if (isFixed(t)) return;
     down = { t, x: e.clientX, y: e.clientY, done: false };
     try { field.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
   });
@@ -1966,14 +1978,17 @@ svg { display: block; }
     down.done = true;
     const [dr, dc] = Math.abs(dx) > Math.abs(dy) ? [0, dx > 0 ? 1 : -1] : [dy > 0 ? 1 : -1, 0];
     const t = down.t;
+    if (isFixed(t)) { nudge(t, dc, dr); return; }
     const n = grid[t.r + dr] && grid[t.r + dr][t.c + dc];
     if (n && !isFixed(n)) trySwap(t, n);
+    else if (n && isFixed(n)) nudge(n, -dc, -dr);
   });
   field.addEventListener('pointerup', () => {
     if (!down) return;
     const d = down; down = null;
     if (d.done || busy) return;
     const t = d.t;
+    if (isFixed(t)) { nudge(t, 0, 0); return; }
     if (!selected) { selected = t; t.el.classList.add('sel'); S('tap'); }
     else if (selected === t) clearSel();
     else if (adjacent(selected, t)) { const s = selected; clearSel(); trySwap(s, t); }
