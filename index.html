@@ -2090,7 +2090,26 @@ svg { display: block; }
     if (ended || busy || !cover.hidden || !lvEl.hidden) return;
     const h = gimmickDemoFind(kind);
     if (h) fingerDemo(h, GIMMICK_TXT[kind] + '<br>이렇게 바꿔 보세요!', null, 6500);
-    else plainBubble(GIMMICK_TXT[kind]);
+    else {
+      plainBubble(GIMMICK_TXT[kind], 7500);
+      // 바늘꽂이·시한 젤리는 어디 있는지 반짝여서 알려줘요 (말풍선이 사라지면 같이 꺼져요)
+      if (kind === 'pin' || kind === 'timer') grid.flat().forEach(t => { if (t && (kind === 'pin' ? t.pin : t.timer)) t.el.classList.add('hint'); });
+    }
+  }
+  // 날개 젤리 시연: 같은 색 4개를 2×2로 모으는 한 수
+  function wingDemoFind() {
+    const cands = [];
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) for (const [dr, dc] of [[0, 1], [1, 0]]) {
+      const r2 = r + dr, c2 = c + dc;
+      if (r2 >= R || c2 >= C) continue;
+      const a = grid[r][c], b = grid[r2][c2];
+      if (!a || !b || isFixed(a) || isFixed(b) || a.special || b.special || a.key || b.key) continue;
+      swapGrid(r, c, r2, c2);
+      const ok = inSquare(r, c) || inSquare(r2, c2);
+      swapGrid(r, c, r2, c2);
+      if (ok) cands.push([r, c, r2, c2]);
+    }
+    return cands.length ? cands[rnd(cands.length)] : null;
   }
   function ctxAfterMove() {
     if (ended || busy || !over.hidden || !cover.hidden || !lvEl.hidden || !cfg) return;
@@ -2117,6 +2136,11 @@ svg { display: block; }
         if (save[flag] && level !== first) continue;
         sh(k); save[flag] = 1; persist(); gimmickTip(k); break;
       }
+    }
+    if (level === WING_FROM && madeMoves >= 3 && !ctxShown.wingd && !fingerOn) {
+      sh('wingd');
+      const h = wingDemoFind(), txt = '같은 색 <b>4개를 2×2</b>로 모으면<br><b>날개 젤리</b>가 생겨요!<br><small>눌러 쓰면 목표를 도와줘요</small>';
+      if (h) fingerDemo(h, txt, null, 6500); else plainBubble(txt, 7500);
     }
   }
   function gimmickDemo(kind) {
