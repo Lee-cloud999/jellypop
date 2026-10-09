@@ -621,7 +621,7 @@ svg { display: block; }
   <div class="mapwrap" id="mapwrap"></div>
 </div>
 <div class="room evt snd" id="snd" hidden role="dialog" aria-label="소리 설정">
-  <div class="rtop"><button class="round" id="sndBack" type="button" aria-label="게임으로 돌아가기"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>소리 설정</h2><span style="width:44px"></span></div>
+  <div class="rtop"><button class="round" id="sndBack" type="button" aria-label="게임으로 돌아가기"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2>설정</h2><span style="width:44px"></span></div>
   <div class="evbody" id="sndBody"></div>
 </div>
 <div class="confirm" id="confirm" hidden role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfText">
@@ -649,9 +649,6 @@ svg { display: block; }
     <div class="hl">
     <button class="round" id="soundBtn" type="button" aria-label="소리 설정">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>
-    </button>
-    <button class="round" id="resetBtn" type="button" aria-label="처음부터 다시 시작(초기화)">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5v5h5"/><path d="M4.8 14a8 8 0 1 0 1.4-6.2L4 10"/></svg>
     </button>
     </div>
     <h1 class="title"><span id="title">1단계 도전</span></h1>
@@ -1574,7 +1571,7 @@ svg { display: block; }
     A.TRACKS.forEach((t, i) => {
       h += '<button class="trk' + (save.music && i === save.track ? ' cur' : '') + '" type="button" data-s="trk" data-n="' + i + '"><b>' + (i + 1) + '. ' + t.name + '</b><span>' + t.desc + '</span></button>';
     });
-    sndBody.innerHTML = h + '</div>';
+    sndBody.innerHTML = h + '</div><div class="evhead" style="font-size:18px;margin-top:18px">데이터</div><button class="btn danger wide" type="button" data-s="reset" style="width:100%;min-height:52px;font-size:18px;justify-content:center">처음부터 다시 시작 (초기화)</button>';
   }
   function openSound() {
     clearHint(); hammerMode = false; field.classList.remove('hammering'); tip.hidden = true;
@@ -1595,6 +1592,7 @@ svg { display: block; }
         setTimeout(sndRender, 300);
       });
     }
+    else if (a === 'reset') { openConfirm(); }
     else if (a === 'trk') { save.track = parseInt(b.dataset.n, 10); save.music = true; persist(); A.startMusic(save.track); sndRender(); }
   });
   sndEl.addEventListener('input', e => {
@@ -1623,7 +1621,6 @@ svg { display: block; }
     cfEl.hidden = false; $('cfNo').focus();
   };
   const closeConfirm = () => { cfEl.hidden = true; };
-  $('resetBtn').addEventListener('click', () => { if (busy && !ended) return; S('click'); openConfirm(); });
   $('cfNo').addEventListener('click', () => { S('click'); closeConfirm(); });
   cfEl.addEventListener('click', e => { if (e.target === cfEl) closeConfirm(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !cfEl.hidden) closeConfirm(); });
