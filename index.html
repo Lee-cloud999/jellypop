@@ -1529,12 +1529,7 @@ svg { display: block; }
       if (rb) {
         const o = rb === pa ? pb : pa;
         if (o.special === 'rainbow') { pa.target = 'all'; pb.target = 'all'; showToast('무지개 + 무지개!'); }
-        else if (o.special) {
-          // 무지개 + 특수 젤리: 그 색 젤리가 모두 같은 특수 젤리로 바뀌어 한꺼번에 터져요
-          const conv = grid.flat().filter(x => x && !isFixed(x) && !x.special && x.type === o.type);
-          conv.forEach(x => { x.special = o.special === 'bomb' ? 'bomb' : (rnd(2) ? 'row' : 'col'); render(x); x.el.classList.remove('born'); void x.el.offsetWidth; x.el.classList.add('born'); });
-          forced = forced.concat(conv); rb.target = 'none'; showToast('무지개 조합!');
-        } else rb.target = o.type;
+        else rb.target = o.type; // 닿는 쪽 젤리와 같은 색을 모두 없애요 (줄무늬·폭탄이면 그 젤리의 효과도 같이 터져요)
       } else if (pa.special === 'bomb' && pb.special === 'bomb') { pa.rad = 4; pb.rad = 4; showToast('폭탄 + 폭탄!'); }
       else if ((pa.special === 'bomb' && pb.special) || (pb.special === 'bomb' && pa.special)) { (pa.special === 'bomb' ? pa : pb).big = 'cross3'; showToast('폭탄 + 줄무늬!'); }
     }
