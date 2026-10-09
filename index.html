@@ -1340,6 +1340,13 @@ svg { display: block; }
   async function resolve(swapCells) {
     let chain = 0;
     let forced = swapCells ? swapCells.filter(t => t.special) : [];
+    if (swapCells && swapCells.length === 2) {
+      const [pa, pb] = swapCells;
+      if (pa.special && pa.special === pb.special && pa.special !== 'bomb') {
+        pa.special = 'row'; pb.special = 'col'; render(pa); render(pb);
+        forced = [pa, pb];
+      }
+    }
     while (true) {
       const runs = findRuns();
       if (!runs.length && !forced.length) break;
