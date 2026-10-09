@@ -1191,18 +1191,18 @@ svg { display: block; }
     if (tier === 0) {
       g.push({ k: 'c', t: a, n: Math.round(b0 * 0.8) });
       if (n >= 4) g.push({ k: 'c', t: b, n: Math.round(b0 * 0.55) });
-      moves = 22;
+      moves = 19;
     } else if (tier === 1) {
       g.push({ k: 'c', t: a, n: b0 });
       g.push({ k: 'c', t: b, n: Math.round(b0 * 0.8) });
       if (n % 2 === 0) g.push(n % 4 === 0 ? { k: 's', n: 1 } : { k: 'b', n: 1 });
-      moves = 19;
+      moves = 16;
     } else {
       g.push({ k: 'c', t: a, n: Math.round(b0 * 1.15) });
       g.push({ k: 'c', t: b, n: Math.round(b0 * 0.95) });
       g.push(n % 2 === 0 ? { k: 's', n: 2 } : { k: 'b', n: 2 });
       if (n >= 26) g.push({ k: 'c', t: c, n: Math.round(b0 * 0.6) });
-      moves = n >= 26 ? 18 : 17;
+      moves = n >= 26 ? 15 : 14;
     }
     const hasIce = ICE_LV.indexOf(n) >= 0, hasCrate = CRATE_LV.indexOf(n) >= 0;
     let iceN = 0, crateN = 0, iceHp = 1;
@@ -1210,11 +1210,11 @@ svg { display: block; }
       g.splice(1); // 장애물 단계: 색 목표 하나 + 장애물 목표
       if (hasIce) { iceN = 3 + Math.floor(n / 4); iceHp = n >= 16 ? 2 : 1; g.push({ k: 'i', n: iceN }); }
       if (hasCrate) { crateN = 2 + Math.floor(n / 10); g.push({ k: 'x', n: crateN }); }
-      moves += hasIce && hasCrate ? 7 : hasIce ? 4 : 3;
+      moves += hasIce && hasCrate ? 5 : hasIce ? 3 : 2;
     }
     let keyN = 0, gooN = 0;
-    if (KEY_LV.indexOf(n) >= 0) { g.splice(1); keyN = 2 + Math.floor(n / 14); g.push({ k: 'k', n: keyN }); moves += 4; }
-    if (GOO_LV.indexOf(n) >= 0) { g.splice(1); gooN = 2 + Math.floor(n / 12); g.push({ k: 'g', n: gooN }); moves += 3; }
+    if (KEY_LV.indexOf(n) >= 0) { g.splice(1); keyN = 2 + Math.floor(n / 14); g.push({ k: 'k', n: keyN }); moves += 3; }
+    if (GOO_LV.indexOf(n) >= 0) { g.splice(1); gooN = 2 + Math.floor(n / 12); g.push({ k: 'g', n: gooN }); moves += 2; }
     const t2 = Math.round((700 + n * 50) / 50) * 50;
     // 별: 남은 이동 수로 결정 (쉬운 단계일수록 3개 기준이 높아요)
     const f3 = tier === 0 ? 0.4 : tier === 1 ? 0.35 : 0.3, f2 = tier === 0 ? 0.2 : tier === 1 ? 0.15 : 0.12;
