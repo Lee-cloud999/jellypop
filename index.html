@@ -201,13 +201,14 @@ svg { display: block; }
 }
 .gem { position: absolute; inset: 4%; transition: transform 0.18s ease, opacity 0.18s ease; }
 .gem img { width: 100%; height: 100%; display: block; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
-.ice { position: absolute; left: 0; top: 0; width: var(--cell); height: var(--cell); pointer-events: none; z-index: 3; transition: opacity 0.25s, transform 0.25s; }
+.ice { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; transition: opacity 0.25s, transform 0.25s; }
 .ice img { width: 100%; height: 100%; display: block; object-fit: contain; opacity: 0.66; }
 .shat { position: absolute; left: 0; top: 0; width: var(--cell); height: var(--cell); pointer-events: none; z-index: 6; animation: shat 0.45s ease-out forwards; }
 .shat img { width: 100%; height: 100%; display: block; object-fit: contain; }
 @keyframes shat { from { opacity: 1; scale: 0.9; } to { opacity: 0; scale: 1.8; } }
 .ice.out { opacity: 0; transform: scale(1.18) !important; }
-.tile.crate { z-index: 4; }
+.tile.crate, .tile.frozen { z-index: 4; }
+.tile.frozen.hit .gem { animation: nope 0.3s ease-in-out; }
 .tile.crate .gem { inset: 2%; }
 .tile.crate.hit .gem { animation: nope 0.3s ease-in-out; }
 .tile.sel .gem { transform: scale(1.14); animation: wobble 0.7s ease-in-out infinite; }
@@ -1306,18 +1307,8 @@ svg { display: block; }
   };
   const obsSrc = k => OBSIMG[k] || ('data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' + OBSVG[k] + '</svg>'));
   const ICE_LV = [8, 10, 13, 16, 19, 22, 25, 28, 30], CRATE_LV = [12, 15, 18, 21, 24, 27, 29, 30];
-  let ice = [], iceEls = [];
-  function iceKey(hp, max) { return max >= 2 && hp < max ? 'ice1' : 'ice0'; }
-  function renderIce(r, c) {
-    const el = iceEls[r] && iceEls[r][c]; if (!el) return;
-    const hp = ice[r][c];
-    el.firstChild.src = obsSrc(iceKey(hp, cfg.iceHp || 1));
-  }
-  function placeIceEls() {
-    for (let r = 0; r < iceEls.length; r++) for (let c = 0; c < (iceEls[r] || []).length; c++) {
-      const el = iceEls[r][c]; if (el) el.style.transform = 'translate(' + (c * cell) + 'px,' + (r * cell) + 'px)';
-    }
-  }
+  const iceKey = (hp, max) => (max >= 2 && hp < max ? 'ice1' : 'ice0');
+  const isFixed = t => !!(t && (t.crate || t.frozen));
   function shatter(k, r, c) {
     if (reduceMotionFx) return;
     const el = document.createElement('div');
@@ -1327,21 +1318,24 @@ svg { display: block; }
   }
   const reduceMotionFx = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   function tallyKind(k) { goals.forEach(g => { if (g.k === k) g.got++; }); }
-  // 얼음 한 번 깨기 (반환: 완전히 깨졌는지)
-  function hitIce(r, c) {
-    if (!ice[r] || !(ice[r][c] > 0)) return false;
-    ice[r][c]--;
-    const el = iceEls[r][c];
-    if (ice[r][c] <= 0) {
-      tallyKind('i'); shatter('ice2', r, c);
-      FX.burst((c + 0.5) * cell, (r + 0.5) * cell, '#9FDCFF', 10, 150);
-      if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 280); }
-      iceEls[r][c] = null;
+  // 얼음에 갇힌 젤리: 옆에서 터뜨리면 한 겹씩 깨져요 (겹이 다 깨지면 평범한 젤리가 돼요)
+  function hitFrozen(t) {
+    t.frozen--;
+    const iceEl = t.el.querySelector('.ice');
+    if (t.frozen <= 0) {
+      t.frozen = 0;
+      tallyKind('i'); shatter('ice2', t.r, t.c);
+      FX.burst((t.c + 0.5) * cell, (t.r + 0.5) * cell, '#9FDCFF', 10, 150);
+      t.el.classList.remove('frozen');
+      if (iceEl) { iceEl.classList.add('out'); setTimeout(() => iceEl.remove(), 280); }
       return true;
     }
-    renderIce(r, c);
+    if (iceEl) iceEl.firstChild.src = obsSrc(iceKey(t.frozen, cfg.iceHp || 1));
+    kick(t.el, 'hit', 340);
+    FX.burst((t.c + 0.5) * cell, (t.r + 0.5) * cell, '#9FDCFF', 6, 120);
     return false;
   }
+  const hurtFixed = t => (t.crate ? hitCrate(t) : hitFrozen(t));
   function makeCrate() {
     const el = document.createElement('div');
     el.className = 'tile crate';
@@ -1369,6 +1363,11 @@ svg { display: block; }
 
   /* ---------- tiles ---------- */
   function render(t) {
+    if (t.frozen && !t.el.querySelector('.ice')) {
+      const d = document.createElement('div'); d.className = 'ice';
+      d.innerHTML = '<img alt="" draggable="false" src="' + obsSrc(iceKey(t.frozen, cfg.iceHp || 1)) + '">';
+      t.el.appendChild(d); t.el.classList.add('frozen');
+    }
     if (t.crate) { t.el.firstChild.innerHTML = '<img src="' + obsSrc(t.crate >= 2 ? 'crate0' : 'crate1') + '" alt="" draggable="false">'; return; }
     const src = IMG[t.special ? SPECIAL_IMG[t.special] : t.type];
     t.el.firstChild.innerHTML = '<img src="' + src + '" alt="" draggable="false">';
@@ -1392,12 +1391,11 @@ svg { display: block; }
     field.style.setProperty('--cell', cell + 'px');
     FX.resize();
     for (const row of grid) for (const t of row) if (t) place(t, t.r, t.c);
-    placeIceEls();
   }
   new ResizeObserver(measure).observe(field);
 
   /* ---------- board logic ---------- */
-  const same = (a, b) => !!b && !b.special && !b.crate && b.type === a.type;
+  const same = (a, b) => !!b && !b.special && !b.crate && !b.frozen && b.type === a.type;
 
   function findRuns() {
     const runs = [];
@@ -1405,7 +1403,7 @@ svg { display: block; }
       let c = 0;
       while (c < C) {
         const t = grid[r][c];
-        if (!t || t.special || t.crate) { c++; continue; }
+        if (!t || t.special || t.crate || t.frozen) { c++; continue; }
         let e = c + 1;
         while (e < C && same(t, grid[r][e])) e++;
         if (e - c >= 3) { const cells = []; for (let k = c; k < e; k++) cells.push(grid[r][k]); runs.push({ dir: 'h', cells }); }
@@ -1416,7 +1414,7 @@ svg { display: block; }
       let r = 0;
       while (r < R) {
         const t = grid[r][c];
-        if (!t || t.special || t.crate) { r++; continue; }
+        if (!t || t.special || t.crate || t.frozen) { r++; continue; }
         let e = r + 1;
         while (e < R && same(t, grid[e][c])) e++;
         if (e - r >= 3) { const cells = []; for (let k = r; k < e; k++) cells.push(grid[k][c]); runs.push({ dir: 'v', cells }); }
@@ -1428,7 +1426,7 @@ svg { display: block; }
 
   function lineLen(r, c) {
     const t = grid[r][c];
-    if (!t || t.special || t.crate) return 0;
+    if (!t || t.special || t.crate || t.frozen) return 0;
     let h = 1, v = 1, i;
     for (i = c - 1; i >= 0 && same(t, grid[r][i]); i--) h++;
     for (i = c + 1; i < C && same(t, grid[r][i]); i++) h++;
@@ -1438,7 +1436,7 @@ svg { display: block; }
   }
   function swapGrid(r1, c1, r2, c2) { const a = grid[r1][c1]; grid[r1][c1] = grid[r2][c2]; grid[r2][c2] = a; }
   function canSwapMatch(r1, c1, r2, c2) {
-    if (grid[r1][c1].crate || grid[r2][c2].crate) return false;
+    if (isFixed(grid[r1][c1]) || isFixed(grid[r2][c2])) return false;
     if (grid[r1][c1].special || grid[r2][c2].special) return true;
     swapGrid(r1, c1, r2, c2);
     const ok = lineLen(r1, c1) >= 3 || lineLen(r2, c2) >= 3;
@@ -1452,7 +1450,7 @@ svg { display: block; }
     for (const [r, c] of order) {
       for (const [dr, dc] of [[0, 1], [1, 0]]) {
         const r2 = r + dr, c2 = c + dc;
-        if (r2 < R && c2 < C && grid[r][c] && grid[r2][c2] && !grid[r][c].crate && !grid[r2][c2].crate && canSwapMatch(r, c, r2, c2)) return [r, c, r2, c2];
+        if (r2 < R && c2 < C && grid[r][c] && grid[r2][c2] && !isFixed(grid[r][c]) && !isFixed(grid[r2][c2]) && canSwapMatch(r, c, r2, c2)) return [r, c, r2, c2];
       }
     }
     return null;
@@ -1469,7 +1467,7 @@ svg { display: block; }
 
   async function collapse() {
     const moved = [];
-    const isCrate = (r, c) => !!(grid[r][c] && grid[r][c].crate);
+    const isCrate = (r, c) => isFixed(grid[r][c]);
     for (let c = 0; c < C; c++) {
       let r = R - 1;
       while (r >= 0) {
@@ -1546,7 +1544,7 @@ svg { display: block; }
         for (const x of hit) { if (!x) continue; set.add(x); if (x.special && !activated.has(x)) queue.push(x); }
       }
       const crateHits = new Set();
-      [...set].forEach(x => { if (x.crate) { set.delete(x); crateHits.add(x); } });
+      [...set].forEach(x => { if (isFixed(x)) { set.delete(x); crateHits.add(x); } });
       const survivors = creations.filter(({ t }) => !set.has(t));
 
       const doneBefore = goals.filter(g => g.got >= g.n).length;
@@ -1557,13 +1555,12 @@ svg { display: block; }
       {
         const cellsHit = [...set, ...survivors.map(s => s.t)];
         cellsHit.forEach(x => {
-          hitIce(x.r, x.c);
           [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => {
             const nb = grid[x.r + dr] && grid[x.r + dr][x.c + dc];
-            if (nb && nb.crate) crateHits.add(nb);
+            if (isFixed(nb)) crateHits.add(nb);
           });
         });
-        crateHits.forEach(x => hitCrate(x));
+        crateHits.forEach(x => hurtFixed(x));
         if (crateHits.size) S('pop', 1, 4);
       }
       S('pop', chain, set.size);
@@ -1612,7 +1609,7 @@ svg { display: block; }
     showToast('섞는 중');
     S('shuffle');
     const pos = [];
-    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (!(grid[r][c] && grid[r][c].crate)) pos.push([r, c]);
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (!isFixed(grid[r][c])) pos.push([r, c]);
     const tiles = pos.map(([r, c]) => grid[r][c]);
     let tries = 0;
     do {
@@ -1647,7 +1644,7 @@ svg { display: block; }
   }
 
   async function trySwap(a, b) {
-    if (busy || ended || a.crate || b.crate) return;
+    if (busy || ended || isFixed(a) || isFixed(b)) return;
     busy = true;
     clearHint(); clearSel();
     swapPos(a, b);
@@ -1678,9 +1675,8 @@ svg { display: block; }
     persist();
     S('hammer');
     { const cx = (t.c + 0.5) * cell, cy = (t.r + 0.5) * cell; FX.burst(cx, cy, t.special || t.crate ? '#FFD25E' : FX.COLORS[t.type], 18, 230); FX.ring(cx, cy, '#FFFFFF', cell * 1.7); FX.shake(5, 0.3); }
-    if (t.crate) { hitCrate(t); updateHud(true); await sleep(260); await collapse(); await resolve(null); endCheck(); return; }
+    if (isFixed(t)) { hurtFixed(t); updateHud(true); await sleep(260); await collapse(); await resolve(null); endCheck(); return; }
     if (!t.special) tallyColor(t.type);
-    hitIce(t.r, t.c);
     score += 10;
     grid[t.r][t.c] = null;
     t.el.classList.add('pop');
@@ -1882,8 +1878,7 @@ svg { display: block; }
 
   function newBoard() {
     clearHint(); clearSel();
-    field.querySelectorAll('.tile, .ice').forEach(el => el.remove());
-    ice = []; iceEls = [];
+    field.querySelectorAll('.tile').forEach(el => el.remove());
     // 상자 자리: 맨 윗줄·맨 아랫줄은 피하고 서로 붙지 않게
     const crateAt = new Set();
     for (let tries = 0; crateAt.size < cfg.crateN && tries < 200; tries++) {
@@ -1905,6 +1900,14 @@ svg { display: block; }
           grid[r].push(makeTile(opts[rnd(opts.length)]));
         }
       }
+      // 얼음에 갇힌 젤리: 상자가 없는 칸에, 서로 붙지 않게 흩어 놓기
+      const frozenAt = new Set();
+      for (let n = 0, tries = 0; n < cfg.iceN && tries < 400; tries++) {
+        const r = rnd(R), c = rnd(C), k = r * C + c;
+        if (grid[r][c].crate || frozenAt.has(k) || frozenAt.has(k - 1) || frozenAt.has(k + 1) || frozenAt.has(k - C) || frozenAt.has(k + C)) continue;
+        frozenAt.add(k); n++;
+        grid[r][c].frozen = cfg.iceHp; render(grid[r][c]);
+      }
     } while (!findHint());
     measure();
     for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
@@ -1913,18 +1916,6 @@ svg { display: block; }
       place(t, r, c);
       field.appendChild(t.el);
     }
-    // 얼음: 상자가 없는 칸에 흩어 놓기
-    for (let r = 0; r < R; r++) { ice.push(new Array(C).fill(0)); iceEls.push(new Array(C).fill(null)); }
-    for (let n = 0, tries = 0; n < cfg.iceN && tries < 400; tries++) {
-      const r = rnd(R), c = rnd(C);
-      if (ice[r][c] || grid[r][c].crate) continue;
-      ice[r][c] = cfg.iceHp; n++;
-      const el = document.createElement('div');
-      el.className = 'ice';
-      el.innerHTML = '<img alt="" draggable="false">';
-      iceEls[r][c] = el; field.appendChild(el); renderIce(r, c);
-    }
-    placeIceEls();
     void field.offsetWidth;
     field.querySelectorAll('.tile').forEach(el => { el.style.transition = ''; });
   }
@@ -1942,7 +1933,7 @@ svg { display: block; }
     field.classList.remove('hammering'); tip.hidden = true;
     hideOver();
     newBoard();
-    goals.forEach(g => { if (g.k === 'i') g.n = ice.reduce((a, row) => a + row.filter(v => v > 0).length, 0); if (g.k === 'x') g.n = grid.flat().filter(t => t && t.crate).length; });
+    goals.forEach(g => { if (g.k === 'i') g.n = grid.flat().filter(t => t && t.frozen).length; if (g.k === 'x') g.n = grid.flat().filter(t => t && t.crate).length; });
     updateHud(false);
     showToast(level + '단계 · ' + TIER_NAME[tierOf(level)] + (level === ICE_LV[0] ? ' · 얼음 칸이 나왔어요!' : level === CRATE_LV[0] ? ' · 상자가 나왔어요!' : R * C > prevCells && grid.length ? ' · 보드가 커졌어요!' : ''));
     scheduleHint();
@@ -1964,7 +1955,7 @@ svg { display: block; }
     if (!t) return;
     clearHint();
     if (hammerMode) { useHammer(t); return; }
-    if (t.crate) return;
+    if (isFixed(t)) return;
     down = { t, x: e.clientX, y: e.clientY, done: false };
     try { field.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
   });
@@ -1976,7 +1967,7 @@ svg { display: block; }
     const [dr, dc] = Math.abs(dx) > Math.abs(dy) ? [0, dx > 0 ? 1 : -1] : [dy > 0 ? 1 : -1, 0];
     const t = down.t;
     const n = grid[t.r + dr] && grid[t.r + dr][t.c + dc];
-    if (n && !n.crate) trySwap(t, n);
+    if (n && !isFixed(n)) trySwap(t, n);
   });
   field.addEventListener('pointerup', () => {
     if (!down) return;
