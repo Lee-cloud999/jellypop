@@ -1821,7 +1821,7 @@ svg { display: block; }
       S('pop', chain, set.size);
       if (activated.size) S([...activated].some(t => t.special === 'bomb' || t.special === 'rainbow') ? 'boom' : 'sweep');
       if (survivors.length) S('make');
-      if (survivors.some(s => s.sp === 'wing') && !save.seenWing) { save.seenWing = 1; persist(); setTimeout(() => { if (!ended) plainBubble('<b>날개 젤리</b>가 생겼어요!<br>눌러 보세요. 날아가서<br>목표에 도움이 되는 젤리를 하나 없애 줘요', 8000); }, 900); }
+      if (survivors.some(s => s.sp === 'wing') && !save.seenWing) { save.seenWing = 1; persist(); setTimeout(() => { if (!ended) plainBubble('<b>날개 젤리</b>가 생겼어요!<br>눌러 보세요. 위아래 젤리가 터지고<br>목표에 도움이 되는 젤리가 하나 더 사라져요', 8000); }, 900); }
       if (survivors.some(s => s.sp === 'rainbow') && !save.seenRb) { save.seenRb = 1; persist(); showToast('무지개 젤리! 아무 젤리와 바꾸면 그 색이 모두 사라져요'); }
       if (goals.filter(g => g.got >= g.n).length > doneBefore) S('goal');
       goals.forEach((g, i) => { g.pulse = !prev[i] && g.got >= g.n; });
@@ -2129,6 +2129,7 @@ svg { display: block; }
     fl.style.transform = 'translate(' + (c0 * cell) + 'px,' + (r0 * cell) + 'px)';
     fl.appendChild(t.el.firstChild.cloneNode(true)); field.appendChild(fl);
     const ex = [t];
+    [grid[r0 - 1] && grid[r0 - 1][c0], grid[r0 + 1] && grid[r0 + 1][c0]].forEach(x => { if (x && !isFixed(x) && !x.key) ex.push(x); });
     FX.ring((c0 + 0.5) * cell, (r0 + 0.5) * cell, '#FFFFFF', cell * 1.8);
     await resolve(null, ex);
     let tg = wingTarget();
