@@ -398,11 +398,16 @@ svg { display: block; }
 .shop .coinline { display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-display); font-size: 26px; }
 .shop-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 8px 12px; border-radius: 16px; background: var(--paper); box-shadow: 0 3px 0 var(--shade); outline: 2px dashed var(--stitch); outline-offset: -4px; }
 .shop-row .ic { flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--ball, var(--ball1)); font-family: var(--font-display); font-size: 20px; color: var(--ink); }
+.shead { align-self: flex-start; font: 400 22px/1.2 var(--font-display); color: var(--ink); margin: 8px 4px 0; }
+.over[data-shop] { justify-content: flex-start; padding-top: 28px; }
 .stabs { display: flex; gap: 6px; width: 100%; max-width: 480px; justify-content: center; flex-wrap: wrap; }
 .stab { border: 0; cursor: pointer; font: 700 14px/1 'Noto Sans KR', sans-serif; color: var(--ink); padding: 9px 13px; border-radius: 999px; background: var(--paper); box-shadow: 0 2px 0 var(--shade); outline: 2px dashed var(--stitch); outline-offset: -3px; }
 .stab.on { background: var(--accent); outline-color: #fff; }
 .shop-row.paid .ic { background: none; width: 72px; height: 72px; flex: none; display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 0; }
-.shop-row.paid .ic.multi { width: 96px; }
+.shop-row.paid .ic.multi { width: 84px; }
+.over[data-shop] .shop-row.paid { padding: 12px 12px; gap: 10px; }
+.over[data-shop] .shop-row.paid .tx span { font-size: 13px; line-height: 1.3; }
+.over[data-shop] .shop-row.paid .btn.price { min-width: 88px; padding: 8px 10px; }
 .shopnote { min-height: 28px; font-weight: 700; font-size: 15px; color: var(--ink); opacity: 0; transition: opacity 0.2s; background: var(--paper); border-radius: 999px; padding: 4px 14px; box-shadow: 0 2px 0 var(--shade); }
 .shopnote.show { opacity: 1; }
 .shop-row.paid .ic.multi { gap: 0; }
@@ -1220,7 +1225,7 @@ svg { display: block; }
     { k: 'shuf', f: 'shuf', name: '섞기', desc: '젤리를 모두 섞어요', cost: 50, ic: 'shuf', ball: 'var(--ball3)' }
   ];
   let shopFromMap = false, shopTab = 'buy';
-  const STABS = [['buy', '코인 상점'], ['coin', '코인'], ['cpack', '코인팩'], ['ipack', '아이템팩'], ['item', '아이템']];
+  const SECTIONS = [['coin', '코인'], ['cpack', '코인팩'], ['ipack', '아이템팩'], ['item', '아이템']];
   const PAID = {
     coin: [
       { id: 'c1', name: '코인 300', desc: '코인 300개', price: 1100, r: { coins: 300 }, ic: ['COIN'] },
@@ -1255,21 +1260,16 @@ svg { display: block; }
     if (busy && !ended) return;
     if (!over.hidden && !over.dataset.shop) prevOver = over.innerHTML;
     const st = over.scrollTop;
-    let html = '<h3>상점</h3><div class="stabs" role="tablist">' + STABS.map(t => '<button class="stab' + (t[0] === shopTab ? ' on' : '') + '" type="button" role="tab" data-act="stab" data-k="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>' +
-      '<div class="shop"><div class="coinline">' + icoImg('coin', 26) + ' ' + fmt(save.coins) + '</div>';
-    if (shopTab === 'buy') {
-      SHOP.forEach(it => {
-        html += '<div class="shop-row"><span class="ic" style="--ball:' + it.ball + '">' + ic(it.ic, 68) + '<i class="own" aria-label="보유 ' + save[it.f] + '개">' + save[it.f] + '</i></span><div class="tx"><b>' + it.name + '</b><span>' + it.desc + '</span></div>' +
-          '<button class="btn primary" type="button" data-act="buy" data-k="' + it.k + '"' + (save.coins < it.cost ? ' disabled' : '') + '>' + icoImg('coin', 17) + ' ' + it.cost + '</button></div>';
-      });
-    } else {
-      (PAID[shopTab] || []).forEach(p => {
-        const one = p.ic.length === 1, px = one ? 64 : p.ic.length === 2 ? 44 : 32;
+    let html = '<h3>상점</h3><div class="shop"><div class="coinline">' + icoImg('coin', 26) + ' ' + fmt(save.coins) + '</div>';
+    SECTIONS.forEach(([key, title]) => {
+      html += '<div class="shead">' + title + '</div>';
+      PAID[key].forEach(p => {
+        const one = p.ic.length === 1, px = one ? 64 : p.ic.length === 2 ? 40 : 28;
         html += '<div class="shop-row paid"><span class="ic' + (one ? '' : ' multi') + '">' + p.ic.map(k => ic(k, px)).join('') + '</span><div class="tx"><b>' + p.name + '</b><span>' + p.desc + '</span></div>' +
           '<button class="btn primary price" type="button" data-act="pay" data-k="' + p.id + '">' + wonFmt(p.price) + '</button></div>';
       });
-    }
-    html += '</div><div class="shopnote" id="shopNote" role="status"></div><p>' + (shopTab === 'buy' ? '단계를 깨면 코인과 선물을 받아요' : '구매한 상품은 바로 지급돼요') + '</p><div class="row"><button class="btn" type="button" data-act="shopclose">닫기</button></div>';
+    });
+    html += '</div><div class="shopnote" id="shopNote" role="status"></div><p>구매한 상품은 바로 지급돼요</p><div class="row"><button class="btn" type="button" data-act="shopclose">닫기</button></div>';
     showOver(html);
     over.dataset.shop = '1';
     over.scrollTop = st;
@@ -1732,7 +1732,6 @@ svg { display: block; }
     if (act === 'next') { if (level >= MAX_LEVEL) openLevels(); else setupLevel(level + 1); }
     else if (act === 'retry') setupLevel(level);
     else if (act === 'pick') setupLevel(parseInt(b.dataset.n, 10));
-    else if (act === 'stab') { shopTab = b.dataset.k; openShop(); }
     else if (act === 'pay') {
       const p = Object.values(PAID).flat().find(x => x.id === b.dataset.k);
       if (p) payNow(p);
