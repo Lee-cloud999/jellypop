@@ -1809,7 +1809,7 @@ svg { display: block; }
 
   /* ---------- hints ---------- */
   function clearSel() { if (selected) selected.el.classList.remove('sel'); selected = null; }
-  let fingerOn = false;
+  let fingerOn = false, fingerTok = 0;
   function hideFinger() { fingerOn = false; field.querySelectorAll('.finger,.fbub').forEach(e => e.remove()); field.querySelectorAll('.tile.hint').forEach(el => el.classList.remove('hint')); }
   function hintDir(dir) { // dir: 'v' 세로로 바꾸기 / 'h' 가로로 바꾸기
     const cand = [];
@@ -1835,7 +1835,8 @@ svg { display: block; }
     if (Math.max(r1, r2) < R / 2) { b.style.top = 'auto'; b.style.bottom = '8px'; } // 설명 말풍선은 손가락 반대편에
     field.appendChild(b); field.appendChild(f);
     grid[r1][c1].el.classList.add('hint'); grid[r2][c2].el.classList.add('hint');
-    f.addEventListener('animationend', () => { if (!fingerOn) return; if (vert) setTimeout(() => { if (fingerOn) showFinger('h'); }, 500); else { hideFinger(); scheduleHint(); } }); // 세로 한 번 → 가로 한 번 → 끝
+    const tok = ++fingerTok; // 애니메이션 이벤트에 기대지 않고 타이머로 다음 시연으로 넘어가요
+    setTimeout(() => { if (!fingerOn || tok !== fingerTok) return; if (vert) showFinger('h'); else { hideFinger(); scheduleHint(); } }, vert ? 2600 : 2300); // 세로 한 번 → 가로 한 번 → 끝
   }
   function clearHint() { clearTimeout(hintTimer); field.querySelectorAll('.tile.hint').forEach(el => el.classList.remove('hint')); }
   function scheduleHint() {
