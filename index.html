@@ -594,7 +594,7 @@ svg { display: block; }
 .evt.pop .evcard { width: min(100%, 520px); max-height: calc(100dvh - 32px); overflow-y: auto; box-sizing: border-box; background: var(--bg); border-radius: 26px; padding: 14px 14px 18px; box-shadow: 0 6px 0 rgba(0,0,0,0.14); outline: 2px dashed var(--stitch); outline-offset: -6px; }
 .mside { position: fixed; top: 124px; z-index: 6; display: flex; flex-direction: column; gap: 6px; }
 .mside.l { left: 4px; } .mside.r { right: 4px; }
-.mside.br { top: auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: 4px; }
+.mside.br { flex-direction: row; gap: 2px; top: auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: 4px; }
 #room { z-index: 57; }
 .msb { position: relative; width: 62px; border: 0; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; color: var(--ink); }
 .msb .mi { width: 58px; height: 58px; display: grid; place-items: center; }
@@ -635,6 +635,7 @@ svg { display: block; }
     <button class="msb" type="button" data-evopen="wheel" aria-label="룰렛"><span class="mi" data-ic="wheel"></span><span class="ml">룰렛</span><i class="sdot" id="sdWheel" hidden></i></button>
   </div>
   <div class="mside br">
+    <button class="msb" type="button" id="mapShop" aria-label="상점"><span class="mi" data-ic="shop"></span><span class="ml">상점</span></button>
     <button class="msb" type="button" id="mapRoom" aria-label="털실방"><span class="mi" data-ic="room"></span><span class="ml">털실방</span><i class="sdot" id="mapRoomDot" hidden></i></button>
   </div>
   <div id="mmsg"></div>
@@ -1208,6 +1209,7 @@ svg { display: block; }
     { k: 'mv', f: 'mv', name: '이동 +3', desc: '이동 3번 추가', cost: 100, ic: 'mv', ball: 'var(--ball2)' },
     { k: 'shuf', f: 'shuf', name: '섞기', desc: '젤리를 모두 섞어요', cost: 50, ic: 'shuf', ball: 'var(--ball3)' }
   ];
+  let shopFromMap = false;
   function openShop() {
     if (busy && !ended) return;
     if (!over.hidden && !over.dataset.shop) prevOver = over.innerHTML;
@@ -1687,6 +1689,7 @@ svg { display: block; }
       S('coin'); updateHud(false); openShop();
     }
     else if (act === 'shopclose') {
+      if (shopFromMap) { shopFromMap = false; if (prevOver) { const h = prevOver; prevOver = null; showOver(h); } else { hideOver(); } openMap(); return; }
       if (prevOver) { const h = prevOver; prevOver = null; showOver(h); }
       else { hideOver(); if (!ended) scheduleHint(); }
     }
@@ -2275,6 +2278,7 @@ svg { display: block; }
   }
   function closeMap() { lvEl.hidden = true; }
   $('mapRoom').addEventListener('click', () => { S('click'); openRoom(); });
+  $('mapShop').addEventListener('click', () => { S('click'); if (busy && !ended) return; shopFromMap = true; closeMap(); openShop(); });
   lvEl.addEventListener('click', e => {
     const b = e.target.closest('[data-evopen]'); if (!b) return;
     S('click'); openEvent(b.dataset.evopen, true);
