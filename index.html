@@ -600,6 +600,15 @@ svg { display: block; }
 .msb .mi img { width: 58px; height: 58px; object-fit: contain; filter: drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff); }
 .msb .ml { font: 700 11px/1.5 'Noto Sans KR', sans-serif; background: var(--paper); border-radius: 999px; padding: 0 7px; box-shadow: 0 2px 0 var(--shade); }
 .msb .sdot { position: absolute; top: 0; right: 2px; width: 13px; height: 13px; border-radius: 50%; background: #FF7FA6; border: 2px solid var(--paper); }
+@media (min-width: 900px) {
+  .mside { top: 150px; gap: 14px; }
+  .mside.l { left: 24px; } .mside.r { right: 24px; } .mside.br { top: auto; right: 24px; bottom: 24px; }
+  .msb { width: 112px; gap: 5px; }
+  .msb .mi { width: 104px; height: 104px; }
+  .msb .mi img { width: 104px; height: 104px; filter: drop-shadow(4px 0 0 #fff) drop-shadow(-4px 0 0 #fff) drop-shadow(0 4px 0 #fff) drop-shadow(0 -4px 0 #fff); }
+  .msb .ml { font-size: 15px; padding: 1px 12px; }
+  .msb .sdot { width: 18px; height: 18px; top: 2px; right: 8px; }
+}
 .msb:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 12px; }
 @keyframes mpulse { 50% { scale: 1.07; } }
 @keyframes mhop { 50% { transform: translateY(-6px); } }
