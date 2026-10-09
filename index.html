@@ -235,6 +235,11 @@ svg { display: block; }
 .tile.pop .gem { transform: scale(0); opacity: 0; animation: popout 0.24s ease-in forwards; }
 .item.tutglow { animation: tutpulse 0.9s ease-in-out infinite; position: relative; z-index: 3; }
 @keyframes tutpulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255, 143, 184, 0)); } 50% { transform: scale(1.14); filter: drop-shadow(0 0 12px #ff8fb8) drop-shadow(0 0 20px #fff); } }
+.itembub { position: fixed; z-index: 45; width: max-content; max-width: min(86vw, 340px); background: var(--paper); color: var(--ink); font-weight: 800; font-size: 14px; line-height: 1.4; text-align: center; padding: 8px 14px; border-radius: 16px; box-shadow: 0 3px 0 var(--shade); outline: 2px dashed var(--stitch); outline-offset: -4px; pointer-events: none; animation: ibIn .3s ease-out; }
+.itembub small { font-weight: 700; color: var(--muted); font-size: 12px; }
+.itembub::after { content: ''; position: absolute; left: var(--ax, 50%); bottom: -8px; margin-left: -8px; border: 8px solid transparent; border-bottom: 0; border-top-color: var(--paper); }
+@keyframes ibIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (min-width: 700px) { .itembub { font-size: 19px; max-width: 420px; } .itembub small { font-size: 15px; } }
 .finger { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; font-size: 46px; line-height: 1; margin: -4px 0 0 -23px; filter: grayscale(1) brightness(2.6) drop-shadow(0 0 1.5px rgba(60,40,80,.9)) drop-shadow(0 3px 3px rgba(0,0,0,.35)); animation: fing 1.9s ease-in-out infinite; }
 @keyframes fing {
   0% { transform: translate(var(--x1), var(--y1)) scale(1.15); opacity: 0; }
@@ -1902,7 +1907,7 @@ svg { display: block; }
   function bombDemo() {
     if (ended || busy || !cover.hidden || !lvEl.hidden) return;
     const h = bombDemoFind(); if (!h) return;
-    fingerDemo(h, '이렇게 바꾸면 <b>T자</b>로 맞춰져서<br><b>폭탄 젤리</b>가 생겨요!', null, 2800);
+    fingerDemo(h, '가로 3개 + 세로 3개를 <b>T자</b>로 맞추면<br><b>폭탄 젤리</b>가 생겨요! 이렇게 바꿔 보세요', null, 3200);
   }
   function showBombTutorial() {
     if (level !== 3 || ended) return;
@@ -1910,6 +1915,65 @@ svg { display: block; }
     showOver('<h3>T자 맞추기</h3><img src="' + IMG[8] + '" alt="" style="width:84px;height:84px;object-fit:contain">' +
       '<p>가로 3개와 세로 3개가 <b>T자나 L자</b>로 만나게 맞추면<br><b>폭탄 젤리</b>가 생겨요!<br>폭탄은 터질 때 주변을 넓게 없애요.</p>' +
       '<div class="row"><button class="btn primary" type="button" data-act="bombok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
+  }
+  /* ---------- 상황 맞춤 튜토리얼 (큰 창 없이 짧은 말풍선) ---------- */
+  let madeMoves = 0, ctxShown = {};
+  function hideItemTip() { document.querySelectorAll('.itembub').forEach(e => e.remove()); }
+  function itemTip(btn, html, ms) {
+    hideItemTip();
+    const r = btn.getBoundingClientRect();
+    const b = document.createElement('div'); b.className = 'itembub'; b.innerHTML = html;
+    document.body.appendChild(b);
+    const w = b.offsetWidth;
+    b.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+    b.style.top = (r.top - b.offsetHeight - 10) + 'px';
+    b.style.setProperty('--ax', (r.left + r.width / 2 - parseFloat(b.style.left)) + 'px');
+    setTimeout(() => { if (b.isConnected) b.remove(); }, ms || 9000);
+  }
+  function plainBubble(html, ms) {
+    hideFinger();
+    const b = document.createElement('div'); b.className = 'fbub'; b.innerHTML = html; field.appendChild(b);
+    fingerOn = true; const tok = ++fingerTok;
+    setTimeout(() => { if (tok === fingerTok) hideFinger(); }, ms || 4500);
+  }
+  const GIMMICK_TXT = {
+    ice: '<b>얼음 젤리</b>는 움직일 수 없어요.<br>옆에서 터뜨리면 얼음이 깨져요!',
+    crate: '<b>상자</b>는 움직일 수 없어요.<br>옆에서 2번 터뜨리면 부서져요!',
+    goo: '<b>얼룩</b>은 움직일 수 없어요.<br>옆에서 터뜨리면 지워지고, 2번 놔두면 번져요!',
+    key: '<b>열쇠 젤리</b>를 맨 아래 줄까지 내려보내세요!<br>열쇠 아래 젤리를 터뜨리면 내려가요.'
+  };
+  function gimmickTip(kind) {
+    if (ended || busy || !cover.hidden || !lvEl.hidden) return;
+    const h = gimmickDemoFind(kind);
+    if (h) fingerDemo(h, GIMMICK_TXT[kind] + '<br>이렇게 바꿔 보세요!', null, 3200);
+    else plainBubble(GIMMICK_TXT[kind]);
+  }
+  function ctxAfterMove() {
+    if (ended || busy || !over.hidden || !cover.hidden || !lvEl.hidden || !cfg) return;
+    const sh = k => { ctxShown[k] = 1; };
+    if (level === 2 && madeMoves >= 1 && !ctxShown.ham) {
+      sh('ham');
+      if (!save.gaveHammer2) { save.gaveHammer2 = 1; save.hammers++; persist(); updateHud(false); }
+      bHammer.classList.add('tutglow');
+      itemTip(bHammer, '막힐 땐 <b>망치</b>!<br>눌러서 젤리 하나를 바로 터뜨려 보세요<br><small>(망치 +1 선물 받았어요)</small>');
+    } else if (level === 4 && moves <= 12 && !ctxShown.mv) {
+      sh('mv');
+      if (!save.gaveMove4) { save.gaveMove4 = 1; save.mv++; persist(); updateHud(false); }
+      bMoves.classList.add('tutglow');
+      itemTip(bMoves, '이동이 모자라면 <b>이동 아이템</b>!<br>눌러서 이동 +3을 받아 보세요<br><small>(이동 아이템 +1 선물 받았어요)</small>');
+    } else if (level === 5 && madeMoves >= 2 && !ctxShown.shuf) {
+      sh('shuf');
+      if (!save.gaveShuf5) { save.gaveShuf5 = 1; save.shuf++; persist(); updateHud(false); }
+      bShuffle.classList.add('tutglow');
+      itemTip(bShuffle, '맞출 곳이 안 보이면 <b>섞기</b>!<br>눌러서 젤리를 모두 섞어 보세요<br><small>(섞기 +1 선물 받았어요)</small>');
+    } else if (madeMoves >= 1) {
+      const kinds = [['goo', cfg.gooN > 0, 'seenGooTut', 6], ['crate', cfg.crateN > 0, 'seenCrateTut', 7], ['ice', cfg.iceN > 0, 'seenIce', ICE_LV[0]], ['key', cfg.keyN > 0, 'seenKey', 14]];
+      for (const [k, on, flag, first] of kinds) {
+        if (!on || ctxShown[k]) continue;
+        if (save[flag] && level !== first) continue;
+        sh(k); save[flag] = 1; persist(); gimmickTip(k); break;
+      }
+    }
   }
   function gimmickDemo(kind) {
     if (ended || busy || !cover.hidden || !lvEl.hidden) return;
@@ -1963,7 +2027,7 @@ svg { display: block; }
       scheduleHint();
       return;
     }
-    moves--;
+    moves--; madeMoves++;
     updateHud(false);
     const gooBefore = gooCount();
     await resolve([a, b]);
@@ -1975,12 +2039,13 @@ svg { display: block; }
       if (!findHint()) { await shuffleBoard(); if (findRuns().length) await resolve(null); }
     }
     endCheck();
+    if (!ended) setTimeout(ctxAfterMove, 350);
   }
 
   async function useHammer(t) {
     if (busy || ended) return;
     if (t.key) { showToast('열쇠는 망치로 부술 수 없어요'); return; }
-    bHammer.classList.remove('tutglow'); praise('ham', '망치로 부쉈어요!');
+    bHammer.classList.remove('tutglow'); hideItemTip(); praise('ham', '망치로 부쉈어요!');
     busy = true;
     hammerMode = false;
     field.classList.remove('hammering'); tip.hidden = true;
@@ -2495,7 +2560,7 @@ svg { display: block; }
   }
 
   function setupLevel(n) {
-    hideFinger();
+    hideFinger(); hideItemTip(); madeMoves = 0; ctxShown = {};
     bMoves.classList.remove('tutglow'); bShuffle.classList.remove('tutglow'); bHammer.classList.remove('tutglow');
     level = Math.min(MAX_LEVEL, Math.max(1, n));
     save.level = level; persist();
@@ -2516,15 +2581,11 @@ svg { display: block; }
     updateHud(false);
     showToast(level + '단계 · ' + TIER_NAME[tierOf(level)] + (level === ICE_LV[0] ? ' · 얼음 칸이 나왔어요!' : level === CRATE_LV[0] ? ' · 상자가 나왔어요!' : level === KEY_LV[0] ? ' · 열쇠 젤리를 맨 아래로 내려요!' : level === GOO_LV[0] ? ' · 얼룩이 나왔어요! 방치하면 번져요' : R * C > prevCells && grid.length ? ' · 보드가 커졌어요!' : ''));
     scheduleHint();
-    if (cfg.keyN > 0 && (!save.seenKey || level === 14) && cover.hidden && lvEl.hidden) setTimeout(showKeyTutorial, 500);
-    else if (level === 2 && cover.hidden && lvEl.hidden) setTimeout(showHammerTutorial, 500);
-    else if (level === 3 && cover.hidden && lvEl.hidden) setTimeout(showBombTutorial, 500);
-    else if (level === 4 && cover.hidden && lvEl.hidden) setTimeout(showMoveTutorial, 500);
-    else if (level === 5 && cover.hidden && lvEl.hidden) setTimeout(showShuffleTutorial, 500);
-    else if (level === 1 && cover.hidden && lvEl.hidden) setTimeout(() => showFinger('v'), 800);
-    else if (cfg.gooN > 0 && (!save.seenGooTut || level === 6) && cover.hidden && lvEl.hidden) setTimeout(showGooTutorial, 500);
-    else if (cfg.iceN > 0 && (!save.seenIce || level === ICE_LV[0]) && cover.hidden && lvEl.hidden) setTimeout(showIceTutorial, 500);
-    else if (cfg.crateN > 0 && (!save.seenCrateTut || level === 7) && cover.hidden && lvEl.hidden) setTimeout(showCrateTutorial, 500);
+    // 큰 안내창 대신: 1단계·3단계는 시작하자마자 손가락 시연, 나머지는 상황에 맞춰(ctxAfterMove) 짧은 말풍선으로 알려줘요
+    if (cover.hidden && lvEl.hidden) {
+      if (level === 1) setTimeout(() => showFinger('v'), 800);
+      else if (level === 3) setTimeout(bombDemo, 900);
+    }
   }
 
   /* ---------- input ---------- */
@@ -3113,7 +3174,7 @@ svg { display: block; }
   bMoves.addEventListener('click', () => {
     if (ended || !over.hidden) return;
     if (save.mv <= 0) { if (!ended && !busy) openShop(); return; }
-    save.mv--; moves += 3; persist(); bMoves.classList.remove('tutglow'); praise('mv', '이동이 늘었어요!');
+    save.mv--; moves += 3; persist(); bMoves.classList.remove('tutglow'); hideItemTip(); praise('mv', '이동이 늘었어요!');
     S('coin');
     updateHud(false); showToast('이동 +3');
   });
@@ -3123,7 +3184,7 @@ svg { display: block; }
     busy = true; hammerMode = false;
     field.classList.remove('hammering'); tip.hidden = true;
     clearHint(); clearSel();
-    save.shuf--; persist(); bShuffle.classList.remove('tutglow');
+    save.shuf--; persist(); bShuffle.classList.remove('tutglow'); hideItemTip();
     updateHud(false);
     await shuffleBoard();
     busy = false;
