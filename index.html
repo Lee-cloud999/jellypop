@@ -1809,19 +1809,33 @@ svg { display: block; }
 
   /* ---------- hints ---------- */
   function clearSel() { if (selected) selected.el.classList.remove('sel'); selected = null; }
-  function hideFinger() { field.querySelectorAll('.finger,.fbub').forEach(e => e.remove()); }
-  function showFinger() {
+  let fingerOn = false;
+  function hideFinger() { fingerOn = false; field.querySelectorAll('.finger,.fbub').forEach(e => e.remove()); field.querySelectorAll('.tile.hint').forEach(el => el.classList.remove('hint')); }
+  function hintDir(dir) { // dir: 'v' 세로로 바꾸기 / 'h' 가로로 바꾸기
+    const cand = [];
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+      const r2 = dir === 'v' ? r + 1 : r, c2 = dir === 'h' ? c + 1 : c;
+      if (r2 < R && c2 < C && grid[r][c] && grid[r2][c2] && !isFixed(grid[r][c]) && !isFixed(grid[r2][c2]) && canSwapMatch(r, c, r2, c2)) cand.push([r, c, r2, c2]);
+    }
+    return cand.length ? cand[rnd(cand.length)] : null;
+  }
+  function showFinger(dir) {
     if (level !== 1 || ended || busy || !cover.hidden || !lvEl.hidden) return;
-    const h = findHint(); if (!h) return;
-    hideFinger();
+    dir = dir || 'v';
+    const h = hintDir(dir) || hintDir(dir === 'v' ? 'h' : 'v'); if (!h) return;
+    hideFinger(); fingerOn = true;
     const [r1, c1, r2, c2] = h;
+    const vert = c1 === c2;
     const f = document.createElement('div'); f.className = 'finger'; f.textContent = '👆';
+    f.style.animationIterationCount = '1';
     f.style.setProperty('--x1', (c1 + 0.5) * cell + 'px'); f.style.setProperty('--y1', (r1 + 0.5) * cell + 'px');
     f.style.setProperty('--x2', (c2 + 0.5) * cell + 'px'); f.style.setProperty('--y2', (r2 + 0.5) * cell + 'px');
-    const b = document.createElement('div'); b.className = 'fbub'; b.innerHTML = '젤리를 옆 젤리와 바꿔서<br>같은 색 <b>3개</b>를 맞춰 보세요!';
+    const b = document.createElement('div'); b.className = 'fbub';
+    b.innerHTML = (vert ? '위아래로 바꿔서' : '옆으로 바꿔서') + '<br>같은 색 <b>3개</b>를 맞춰 보세요!';
     if (Math.max(r1, r2) < R / 2) { b.style.top = 'auto'; b.style.bottom = '8px'; } // 설명 말풍선은 손가락 반대편에
     field.appendChild(b); field.appendChild(f);
     grid[r1][c1].el.classList.add('hint'); grid[r2][c2].el.classList.add('hint');
+    f.addEventListener('animationend', () => { if (!fingerOn) return; setTimeout(() => { if (fingerOn) showFinger(vert ? 'h' : 'v'); }, 500); }); // 세로 → 가로 → 세로 …
   }
   function clearHint() { clearTimeout(hintTimer); field.querySelectorAll('.tile.hint').forEach(el => el.classList.remove('hint')); }
   function scheduleHint() {
@@ -2379,7 +2393,7 @@ svg { display: block; }
     else if (level === 2 && cover.hidden && lvEl.hidden) setTimeout(showHammerTutorial, 500);
     else if (level === 4 && cover.hidden && lvEl.hidden) setTimeout(showMoveTutorial, 500);
     else if (level === 5 && cover.hidden && lvEl.hidden) setTimeout(showShuffleTutorial, 500);
-    else if (level === 1 && cover.hidden && lvEl.hidden) setTimeout(showFinger, 800);
+    else if (level === 1 && cover.hidden && lvEl.hidden) setTimeout(() => showFinger('v'), 800);
     else if (cfg.gooN > 0 && (!save.seenGooTut || level === 6) && cover.hidden && lvEl.hidden) setTimeout(showGooTutorial, 500);
     else if (cfg.iceN > 0 && (!save.seenIce || level === 3) && cover.hidden && lvEl.hidden) setTimeout(showIceTutorial, 500);
     else if (cfg.crateN > 0 && (!save.seenCrateTut || level === 7) && cover.hidden && lvEl.hidden) setTimeout(showCrateTutorial, 500);
