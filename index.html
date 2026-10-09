@@ -1321,6 +1321,7 @@ svg { display: block; }
     let keyN = 0, gooN = 0;
     if (KEY_LV.indexOf(n) >= 0) { g.splice(1); g.forEach(x => { if (x.k === 'c') x.n = Math.max(4, Math.round(x.n * (n === 14 ? 0.5 : 0.7))); }); keyN = 2 + Math.floor(n / 20); g.push({ k: 'k', n: keyN }); moves += n === 14 ? 12 : 7; }
     if (GOO_LV.indexOf(n) >= 0) { g.splice(1); gooN = 2 + Math.floor(n / 12); g.push({ k: 'g', n: gooN }); moves += 2; }
+    g.forEach(x => { if (x.k === 'c') x.n = Math.max(4, Math.round(x.n * 0.75)); }); // 색 젤리 목표 개수를 전체적으로 줄였어요
     const t2 = Math.round((700 + n * 50) / 50) * 50;
     // 별: 남은 이동 수로 결정 (쉬운 단계일수록 3개 기준이 높아요)
     const f3 = tier === 0 ? 0.4 : tier === 1 ? 0.35 : 0.3, f2 = tier === 0 ? 0.2 : tier === 1 ? 0.15 : 0.12;
