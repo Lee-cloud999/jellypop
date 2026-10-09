@@ -2046,7 +2046,7 @@ svg { display: block; }
     { i: 'star', l: '방 별 +1', s: '별 +1', r: { stars: 1 }, w: 10, c: '#FFC4D8' },
     { i: 'mv', l: '이동권', s: '이동', r: { mv: 1 }, w: 14, c: '#BDE8D8' },
     { i: 'COIN', l: '코인 50', s: '50', r: { coins: 50 }, w: 12, c: '#C7D8FF' },
-    { i: 'gem', l: '대박 300', s: '300', r: { coins: 300 }, w: 2, c: '#FFE7A8' }
+    { i: 'COIN', l: '대박 300', s: '300', r: { coins: 300 }, w: 2, c: '#FFE7A8' }
   ];
   const PAID_COST = 100, PAID_MAX = 3;
   function spinState() {
@@ -2118,7 +2118,7 @@ svg { display: block; }
     let label, dis = false;
     if (sp.free) label = '무료로 돌리기';
     else if (EV.tickets > 0) label = '룰렛권으로 돌리기';
-    else if (sp.paidLeft > 0) { label = '코인 ' + PAID_COST + '으로 돌리기'; dis = !sp.canPaid; }
+    else if (sp.paidLeft > 0) { label = ic('COIN', 18) + ' ' + PAID_COST + '으로 돌리기'; dis = !sp.canPaid; }
     else { label = '오늘은 모두 돌렸어요'; dis = true; }
     return '<div class="evhead"><small>하루 1번 무료 · 룰렛권이 있으면 더 돌릴 수 있어요</small></div>' +
       '<div class="wheelwrap"><i class="ptr"></i>' + wheelSvg() + '</div>' +
