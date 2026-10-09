@@ -2173,14 +2173,14 @@ svg { display: block; }
   const chestOpened = L => !!save.chests[L];
   const chestReady = L => !chestOpened(L) && clearedMax() >= L;
   function mapPoints() {
-    const w = mapEl.clientWidth || 340, cx = w / 2, amp = Math.min(w * 0.24, 118), ROW = 96, items = [];
+    const w = mapEl.clientWidth || 340, cx = w / 2, amp = Math.min(w * 0.2, 96), ROW = 96, items = [];
     let k = 0;
     for (let n = 1; n <= MAX_LEVEL; n++) {
       items.push({ t: 'lv', n, k: k++ });
       if (CHESTS[n]) items.push({ t: 'ch', n, k: k++ });
     }
     const H = k * ROW + 150;
-    items.forEach(it => { it.x = cx + amp * Math.sin(it.k * 0.95 + 0.7); it.y = H - 90 - it.k * ROW; });
+    items.forEach(it => { it.x = cx + amp * Math.sin(it.k * 0.5 + 0.7); it.y = H - 90 - it.k * ROW; });
     return { items, H, w };
   }
   function pathD(pts) {
