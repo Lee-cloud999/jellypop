@@ -2175,7 +2175,7 @@ svg { display: block; }
     '<rect x="20" y="' + (open ? 24 : 17) + '" width="8" height="10" rx="2.5" fill="#fff" stroke="#5A4B6B" stroke-width="2.2"/></svg>';
   const chestOpened = L => !!save.chests[L];
   const chestReady = L => !chestOpened(L) && clearedMax() >= L;
-  const RW0 = 887, RH0 = 1774, RTOP = 250, RBOT = 374;
+  const RW0 = 887, RH0 = 1774, RTOP = 205, RBOT = 374;
   function roadX(kind, yi) { const a = ROADCL[kind], f = Math.max(0, Math.min(a.length - 1, yi / 4)), i = Math.floor(f), j = Math.min(a.length - 1, i + 1); return a[i] + (a[j] - a[i]) * (f - i); }
   function mapPoints() {
     const w = mapEl.clientWidth || 340, s = Math.min(w, 560) / RW0, pH = RH0 * s, offX = (w - RW0 * s) / 2, items = [];
@@ -2184,7 +2184,6 @@ svg { display: block; }
       items.push({ t: 'lv', n, k: k++ });
       if (CHESTS[n]) items.push({ t: 'ch', n, k: k++ });
     }
-    if (items.length > 1 && items[items.length - 1].t === 'ch') { const lastC = items.pop(), lastL = items.pop(); lastL.k = lastC.k; lastC.k = lastC.k - 1; items.push(lastC, lastL); }
     const need = (k - 1) * 96 + (RTOP + RBOT) * s, m = Math.max(0, Math.ceil((need - 2 * pH) / pH)), H = (m + 2) * pH;
     const row = (H - (RTOP + RBOT) * s) / Math.max(1, k - 1);
     items.forEach(it => {
