@@ -295,6 +295,12 @@ svg { display: block; }
 .tapsound[hidden] { display: none; }
 .cover { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: var(--bg); color: var(--ink); }
 .cover[hidden] { display: none; }
+.cover button.sub { background: none; box-shadow: none; padding: 8px 18px; min-height: 44px; font: 400 18px 'Jua','Noto Sans KR',sans-serif; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.cover button.sub[hidden], #coverWho[hidden] { display: none; }
+#coverWho { font: 400 17px 'Jua','Noto Sans KR',sans-serif; color: var(--muted); margin-top: -10px; }
+.acct { display: flex; flex-direction: column; gap: 8px; }
+.acct .awho { font-size: 15px; color: var(--muted); line-height: 1.4; }
+.acct .awho b { color: var(--ink); }
 .cover img.ok { opacity: 1; }
 .cover h1 { margin: 0; font: 400 clamp(44px,14vw,72px)/1.05 'Jua','Noto Sans KR',sans-serif; background: linear-gradient(transparent 62%, var(--accent) 62%); padding: 0 8px; }
 .cover img { opacity: 0; transition: opacity .25s; width: 96px; height: 96px; object-fit: contain; animation: tsPulse 1.6s ease-in-out infinite; }
@@ -761,7 +767,7 @@ svg { display: block; }
   <div class="evbody" id="evBody"></div>
   </div>
 </div>
-<div class="cover" id="cover"><img id="coverImg" alt=""><h1>젤리팝</h1><button type="button" id="coverGo">▶ 시작</button></div>
+<div class="cover" id="cover"><img id="coverImg" alt=""><h1>젤리팝</h1><button type="button" id="coverGo">▶ 시작</button><div id="coverWho" hidden></div><button type="button" class="sub" id="coverLogin" hidden>구글 계정으로 로그인</button></div>
 <div class="hshop" id="hshop" hidden><div class="hcard" id="hcard"></div></div>
 <button class="tapsound" id="tapSound" type="button" hidden>🔊 눌러서 소리 켜기</button>
 <div class="app">
@@ -877,7 +883,8 @@ svg { display: block; }
   if (typeof save.hearts !== 'number') save.hearts = HEART_MAX;
   if (typeof save.hAt !== 'number') save.hAt = Date.now();
   let resetting = false;
-  const persist = () => { if (resetting) return; try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) { /* ignore */ } };
+  let onPersist = null;
+  const persist = () => { if (resetting) return; try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) { /* ignore */ } if (onPersist) onPersist(); };
 
   /* ---------- audio: every sound is synthesized with WebAudio, no files ---------- */
   const A = (() => {
@@ -1149,6 +1156,7 @@ svg { display: block; }
     });
     if (save.music) A.startMusic(save.track);
   });
+  $('coverLogin').addEventListener('click', () => { Acct.login(); });
   setInterval(syncTap, 500);
   setTimeout(syncTap, 100);
   document.addEventListener('visibilitychange', () => A.visible(!document.hidden));
@@ -2651,7 +2659,7 @@ svg { display: block; }
     A.TRACKS.forEach((t, i) => {
       h += '<button class="trk' + (save.music && i === save.track ? ' cur' : '') + '" type="button" data-s="trk" data-n="' + i + '"><b>' + (i + 1) + '. ' + t.name + '</b><span>' + t.desc + '</span></button>';
     });
-    sndBody.innerHTML = h + '</div><div class="evhead" style="font-size:18px;margin-top:18px">데이터</div><button class="btn danger wide" type="button" data-s="reset" style="width:100%;min-height:52px;font-size:18px;justify-content:center">처음부터 다시 시작 (초기화)</button>';
+    sndBody.innerHTML = h + '</div>' + acctHtml() + '<div class="evhead" style="font-size:18px;margin-top:18px">데이터</div><button class="btn danger wide" type="button" data-s="reset" style="width:100%;min-height:52px;font-size:18px;justify-content:center">처음부터 다시 시작 (초기화)</button>';
   }
   function openSound() {
     clearHint(); hammerMode = false; field.classList.remove('hammering'); tip.hidden = true;
@@ -2673,6 +2681,10 @@ svg { display: block; }
       });
     }
     else if (a === 'reset') { openConfirm(); }
+    else if (a === 'login') Acct.login();
+    else if (a === 'logout') Acct.logout();
+    else if (a === 'delacct') Acct.askDelete();
+    else if (a === 'restore') IAP.restore(true);
     else if (a === 'trk') { save.track = parseInt(b.dataset.n, 10); save.music = true; persist(); A.startMusic(save.track); sndRender(); }
   });
   sndEl.addEventListener('input', e => {
@@ -2693,15 +2705,15 @@ svg { display: block; }
   /* ---------- reset everything (with confirmation) ---------- */
   const cfEl = $('confirm');
   const CF_RESET = { title: '정말 초기화할까요?', text: '단계 기록, 코인, 아이템, 털실 방, 출석·룰렛 기록이 모두 삭제되고 처음부터 다시 시작해요. 삭제하면 되돌릴 수 없어요.', yes: '모두 삭제', no: '취소' };
-  let cfOnYes = null;
+  let cfOnYes = null, cfOnNo = null;
   const openConfirm = cfg => {
     cfg = cfg || CF_RESET;
     $('cfTitle').textContent = cfg.title; $('cfText').textContent = cfg.text; $('cfYes').textContent = cfg.yes; $('cfNo').textContent = cfg.no || '취소';
-    cfOnYes = cfg.onYes || null;
+    cfOnYes = cfg.onYes || null; cfOnNo = cfg.onNo || null; $('cfText').style.whiteSpace = 'pre-line';
     cfEl.hidden = false; $('cfNo').focus();
   };
   const closeConfirm = () => { cfEl.hidden = true; };
-  $('cfNo').addEventListener('click', () => { S('click'); closeConfirm(); });
+  $('cfNo').addEventListener('click', () => { S('click'); const f = cfOnNo; cfOnNo = null; cfOnYes = null; closeConfirm(); if (f) f(); });
   cfEl.addEventListener('click', e => { if (e.target === cfEl) closeConfirm(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !cfEl.hidden) closeConfirm(); });
   $('cfYes').addEventListener('click', () => {
@@ -2711,6 +2723,143 @@ svg { display: block; }
     try { A.stopMusic(); } catch (e) { /* ignore */ }
     location.reload();
   });
+
+  /* ---------- 계정(게스트 / 구글 로그인) + 클라우드 저장 + 구매 복원 ----------
+     Firebase 프로젝트를 만든 뒤 아래 FIREBASE_CONFIG에 설정값을 넣으면 로그인 기능이 켜져요.
+     비어 있으면 지금처럼 기기 안 저장만 쓰는 게스트로 동작하고, 로그인 버튼은 보이지 않아요. */
+  const FIREBASE_CONFIG = null; // 예: { apiKey: '...', authDomain: '...firebaseapp.com', projectId: '...', appId: '...' }
+  const FB_VER = '10.12.2';
+  const DEVICE_KEYS = ['sfx', 'music', 'track', 'sfxVol', 'musVol', 'acct', 'cloudTs', 'iapDone'];
+  const Acct = (() => {
+    let prov = null, user = null, synced = false, upT = 0, busyA = false;
+    const available = () => !!prov || !!window.__jpProvider || !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey);
+    const loggedIn = () => !!(save.acct && save.acct.uid);
+    const payload = () => { const o = {}; Object.keys(save).forEach(k => { if (DEVICE_KEYS.indexOf(k) < 0) o[k] = save[k]; }); return JSON.stringify(o); };
+    const meaningful = s => (s.unlocked || 1) > 1 || Object.keys(s.best || {}).length > 0;
+    const sum = s => (s.unlocked || 1) + '단계 · 코인 ' + fmt(s.coins || 0);
+    const loadScript = src => new Promise((res, rej) => { const t = document.createElement('script'); t.src = src; t.onload = res; t.onerror = rej; document.head.appendChild(t); });
+    async function fbProvider() {
+      const base = 'https://www.gstatic.com/firebasejs/' + FB_VER + '/firebase-';
+      await loadScript(base + 'app-compat.js'); await loadScript(base + 'auth-compat.js'); await loadScript(base + 'firestore-compat.js');
+      firebase.initializeApp(FIREBASE_CONFIG);
+      const auth = firebase.auth(), db = firebase.firestore();
+      const gp = () => new firebase.auth.GoogleAuthProvider();
+      const mapU = u => u && { uid: u.uid, name: u.displayName || u.email || '' };
+      return {
+        onAuth(cb) { auth.getRedirectResult().catch(() => {}); auth.onAuthStateChanged(u => cb(mapU(u))); },
+        async signIn() {
+          try { await auth.signInWithPopup(gp()); }
+          catch (e) { if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) await auth.signInWithRedirect(gp()); else throw e; }
+        },
+        signOut() { return auth.signOut(); },
+        async load(uid) { const d = await db.doc('users/' + uid).get(); return d.exists ? d.data() : null; },
+        store(uid, data) { return db.doc('users/' + uid).set(data); },
+        async remove(uid) {
+          await db.doc('users/' + uid).delete();
+          try { await auth.currentUser.delete(); }
+          catch (e) { if (e && e.code === 'auth/requires-recent-login') { await auth.signInWithPopup(gp()); await auth.currentUser.delete(); } else throw e; }
+        }
+      };
+    }
+    function ui() {
+      const on = available(), go = $('coverGo'), lg = $('coverLogin'), who = $('coverWho');
+      lg.hidden = !on || loggedIn();
+      who.hidden = !loggedIn(); if (loggedIn()) who.textContent = (save.acct.name ? save.acct.name + '님' : '로그인됨');
+      go.textContent = on && !loggedIn() ? '▶ 게스트로 시작' : '▶ 시작';
+      if (!sndEl.hidden) sndRender();
+    }
+    async function upload() {
+      if (!prov || !loggedIn() || !synced) return;
+      clearTimeout(upT); upT = 0;
+      try { const cur = await prov.load(save.acct.uid); if (cur && cur.ts > (save.cloudTs || 0) && cur.data !== payload()) { synced = false; reconcile(); return; } } catch (e) { return; } // 다른 기기에서 먼저 바뀌었으면 덮어쓰지 않고 선택하게 해요
+      try { const ts = Date.now(); await prov.store(save.acct.uid, { data: payload(), ts, v: 1 }); save.cloudTs = ts; try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) { /* ignore */ } } catch (e) { /* 오프라인이면 다음에 */ }
+    }
+    function queue() { if (!prov || !loggedIn() || !synced) return; clearTimeout(upT); upT = setTimeout(upload, 4000); }
+    function applyCloud(c) {
+      const dev = {}; DEVICE_KEYS.forEach(k => { if (k in save) dev[k] = save[k]; });
+      const next = Object.assign({}, JSON.parse(c.data), dev, { cloudTs: c.ts });
+      resetting = true;
+      try { localStorage.setItem(STORE, JSON.stringify(next)); } catch (e) { /* ignore */ }
+      location.reload();
+    }
+    async function reconcile() {
+      if (!prov || !loggedIn()) return;
+      let cloud = null;
+      try { cloud = await prov.load(save.acct.uid); } catch (e) { return; } // 인터넷이 없으면 다음에
+      if (!cloud) { synced = true; await upload(); ui(); return; }
+      let cd = null; try { cd = JSON.parse(cloud.data); } catch (e) { /* ignore */ }
+      if (!cd) { synced = true; await upload(); return; }
+      if (cloud.data === payload()) { synced = true; return; }
+      if (!meaningful(save)) { applyCloud(cloud); return; }
+      if (save.cloudTs && cloud.ts === save.cloudTs) { synced = true; await upload(); return; } // 이 기기가 최신
+      openConfirm({
+        title: '진행 상황이 달라요',
+        text: '이 기기: ' + sum(save) + '\n계정: ' + sum(cd) + '\n\n어느 쪽으로 이어서 할까요?\n(선택하지 않은 쪽은 덮어써져요)',
+        yes: '계정 진행', no: '이 기기 진행',
+        onYes: () => applyCloud(cloud),
+        onNo: () => { synced = true; upload().then(() => showToast('이 기기 진행으로 저장했어요')); }
+      });
+    }
+    function onAuth(u) {
+      if (u) { const first = !loggedIn() || save.acct.uid !== u.uid; save.acct = { uid: u.uid, name: u.name }; if (first) synced = false; persist(); ui(); reconcile(); }
+      else if (loggedIn()) { delete save.acct; synced = false; persist(); ui(); }
+    }
+    async function init() {
+      ui();
+      if (!available()) return;
+      try { prov = window.__jpProvider || await fbProvider(); } catch (e) { prov = null; ui(); return; }
+      onPersist = queue;
+      document.addEventListener('visibilitychange', () => { if (document.hidden) upload(); });
+      prov.onAuth(onAuth); ui();
+    }
+    async function login() {
+      if (!prov || busyA) { if (!prov) showToast('로그인 연결 중이에요. 잠시 뒤 다시 눌러 주세요'); return; }
+      busyA = true;
+      try { await prov.signIn(); } catch (e) { if (!(e && /cancel|closed/i.test(e.code || e.message || ''))) showToast('로그인하지 못했어요'); }
+      busyA = false;
+    }
+    async function logout() { try { await upload(); await prov.signOut(); } catch (e) { /* ignore */ } showToast('로그아웃했어요. 이 기기 진행은 그대로 남아요'); }
+    function askDelete() {
+      openConfirm({ title: '계정을 삭제할까요?', text: '계정과 클라우드에 저장된 진행 상황이 삭제돼요. 이 기기에 있는 진행은 그대로 남아요. 되돌릴 수 없어요.', yes: '계정 삭제', no: '취소',
+        onYes: async () => { try { await prov.remove(save.acct.uid); delete save.acct; synced = false; persist(); ui(); showToast('계정을 삭제했어요'); } catch (e) { showToast('삭제하지 못했어요. 잠시 뒤 다시 해 주세요'); } } });
+    }
+    return { init, login, logout, askDelete, available, loggedIn, ui };
+  })();
+  function acctHtml() {
+    if (!Acct.available() && !IAP.available) return '';
+    let h = '<div class="evhead" style="font-size:18px;margin-top:18px">계정</div><div class="acct">';
+    if (Acct.available()) {
+      h += Acct.loggedIn()
+        ? '<div class="awho"><b>' + (save.acct.name || '로그인됨') + '</b><br>진행 상황이 계정에 저장돼요</div><button class="btn wide" type="button" data-s="logout" style="width:100%;min-height:48px;font-size:17px;justify-content:center">로그아웃</button>'
+        : '<div class="awho"><b>게스트</b><br>로그인하면 기기를 바꿔도 이어서 할 수 있어요</div><button class="btn primary wide" type="button" data-s="login" style="width:100%;min-height:52px;font-size:18px;justify-content:center">구글 계정으로 로그인</button>';
+    }
+    h += '<button class="btn wide" type="button" data-s="restore" style="width:100%;min-height:48px;font-size:17px;justify-content:center">구매 복원</button>';
+    if (Acct.available() && Acct.loggedIn()) h += '<button class="btn danger wide" type="button" data-s="delacct" style="width:100%;min-height:48px;font-size:17px;justify-content:center">계정 삭제</button>';
+    return h + '</div>';
+  }
+  /* 구매 복원: 결제가 끝났는데 지급되지 못한 구매를 찾아서 지급해요 (플레이 결제 연결 후 사용) */
+  const IAP = {
+    get available() { return !!window.__jpIap || 'getDigitalGoodsService' in window; },
+    async restore(manual) {
+      let n = 0;
+      try {
+        if (!IAP.available) { if (manual) showToast('이 기기에서는 복원할 구매가 없어요'); return 0; }
+        const svc = window.__jpIap || await window.getDigitalGoodsService('https://play.google.com/billing');
+        const list = await svc.listPurchases();
+        if (!save.iapDone || typeof save.iapDone !== 'object') save.iapDone = {};
+        for (const pu of list) {
+          let p = null; Object.keys(PAID).forEach(k => PAID[k].forEach(x => { if (x.id === pu.itemId) p = x; }));
+          if (!p) continue;
+          if (!save.iapDone[pu.purchaseToken]) { grantPaid(p); save.iapDone[pu.purchaseToken] = 1; persist(); n++; }
+          try { await svc.consume(pu.purchaseToken); } catch (e) { /* 다음에 다시 */ }
+        }
+        if (manual) showToast(n ? '구매 ' + n + '건을 복원했어요' : '복원할 구매가 없어요');
+      } catch (e) { if (manual) showToast('구매 내역을 확인하지 못했어요'); }
+      return n;
+    }
+  };
+  Acct.init();
+  IAP.restore(false);
 
   over.addEventListener('click', e => {
     const b = e.target.closest('[data-act]');
