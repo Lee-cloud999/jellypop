@@ -1079,6 +1079,14 @@ svg { display: block; }
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const rnd = n => Math.floor(Math.random() * n);
+  // 목표 색 젤리가 아주 조금 더 자주 나와요 (아직 못 채운 색 목표만, 약 +25%)
+  const GOAL_W = 1.25;
+  function pickType(arr) {
+    const w = arr.map(t => (typeof goals !== 'undefined' && goals && goals.some(g => g.k === 'c' && g.t === t && g.got < g.n)) ? GOAL_W : 1);
+    let x = Math.random() * w.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < arr.length; i++) { x -= w[i]; if (x < 0) return arr[i]; }
+    return arr[arr.length - 1];
+  }
 
 
   /* ---------- visual effects ---------- */
@@ -1584,7 +1592,7 @@ svg { display: block; }
         }
         const k = w - top + 1;
         for (let i = 0; i < k; i++) {
-          const t = makeTile(rnd(TYPES));
+          const t = makeTile(pickType(Array.from({ length: TYPES }, (_, i) => i)));
           t.el.style.transition = 'none';
           place(t, top + i - k, c);
           field.appendChild(t.el);
@@ -2138,7 +2146,7 @@ svg { display: block; }
             if (r >= 2 && grid[r - 1][c].type === t && grid[r - 2][c].type === t) return false;
             return true;
           });
-          grid[r].push(makeTile(opts[rnd(opts.length)]));
+          grid[r].push(makeTile(pickType(opts)));
         }
       }
       // 열쇠 젤리: 위쪽 두 줄에 서로 다른 칸으로
