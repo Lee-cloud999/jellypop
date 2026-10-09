@@ -2163,6 +2163,7 @@ svg { display: block; }
   async function winLevel() {
     ended = true; busy = true;
     clearHint();
+    if (save.hearts < HEART_MAX) { save.hearts++; if (save.hearts >= HEART_MAX) save.hAt = Date.now(); persist(); renderHearts(); } // 클리어하면 시작할 때 쓴 하트를 돌려받아요
     const bonus = moves * 30;
     score += bonus;
     const movesLeft = moves;

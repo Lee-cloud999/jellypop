@@ -1,5 +1,5 @@
 // 젤리팝 서비스 워커: 한 번 열면 오프라인에서도 실행돼요. 새 버전은 다음에 열 때 자동 반영돼요.
-const CACHE = 'jellypop-v101';
+const CACHE = 'jellypop-v102';
 const FILES = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
