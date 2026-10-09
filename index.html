@@ -1724,6 +1724,10 @@ svg { display: block; }
       tiles.forEach((t, i) => { grid[pos[i][0]][pos[i][1]] = t; });
       tries++;
     } while ((findRuns().length || !findHint()) && tries < 200);
+    // 그래도 움직일 곳이 없으면 색을 새로 뽑아요
+    for (let again = 0; again < 300 && (findRuns().length || !findHint()); again++) {
+      tiles.forEach(t => { if (!t.special && !t.key) { t.type = rnd(TYPES); render(t); } });
+    }
     tiles.forEach((t, i) => { place(t, pos[i][0], pos[i][1]); kick(t.el, 'moving', 300); });
     await sleep(320);
   }
@@ -2032,12 +2036,16 @@ svg { display: block; }
   function newBoard() {
     clearHint(); clearSel();
     field.querySelectorAll('.tile').forEach(el => el.remove());
-    // 상자 자리: 맨 윗줄·맨 아랫줄은 피하고 서로 붙지 않게
+    // 상자 자리: 가장자리·구석을 피해 가운데 쪽에, 대각선까지 서로 떨어지게 (움직일 곳이 막히지 않게)
     const crateAt = new Set();
-    for (let tries = 0; crateAt.size < cfg.crateN && tries < 200; tries++) {
-      const r = 1 + rnd(Math.max(1, R - 2)), c = rnd(C), k = r * C + c;
-      if (crateAt.has(k) || crateAt.has(k - 1) || crateAt.has(k + 1) || crateAt.has(k - C) || crateAt.has(k + C)) continue;
-      crateAt.add(k);
+    const near = (r, c) => [-1, 0, 1].some(dr => [-1, 0, 1].some(dc => crateAt.has((r + dr) * C + (c + dc))));
+    for (let pass = 0; pass < 2 && crateAt.size < cfg.crateN; pass++) {
+      for (let tries = 0; crateAt.size < cfg.crateN && tries < 300; tries++) {
+        const r = pass === 0 ? 2 + rnd(Math.max(1, R - 4)) : 1 + rnd(Math.max(1, R - 2));
+        const c = pass === 0 ? 1 + rnd(Math.max(1, C - 2)) : rnd(C);
+        if (near(r, c)) continue;
+        crateAt.add(r * C + c);
+      }
     }
     do {
       grid = [];
