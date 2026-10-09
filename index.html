@@ -463,7 +463,12 @@ svg { display: block; }
 .imgitem .bic img { width: 56px; height: 56px; max-width: none; }
 .imgitem .iti { width: 56px; height: 56px; max-width: none; object-fit: contain; display: block; filter: drop-shadow(0 2px 3px rgba(120, 90, 160, 0.3)); }
 .imgitem .face .badge { top: -3px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; font-size: 11px; border-radius: 9px; box-shadow: 0 1px 3px rgba(120, 90, 160, 0.3); }
-.imgitem .maplbl { color: #3F2D52; font-size: 11px; margin-top: 2px; }
+.items { --isz: min(80px, calc((min(100vw, 600px) - 40px) / 6 - 6px)); justify-content: space-between; padding-inline: 6px; gap: 0; }
+.items .item { flex: 1 1 0; }
+.imgitem .face { width: var(--isz); height: var(--isz); }
+.imgitem .iti, .imgitem .bic img { width: var(--isz); height: var(--isz); }
+.imgitem .face .badge { min-width: calc(var(--isz) * 0.32); height: calc(var(--isz) * 0.32); font-size: clamp(11px, calc(var(--isz) * 0.2), 15px); border-radius: 999px; top: -2px; right: calc(var(--isz) * -0.08); }
+.imgitem .maplbl { color: #3F2D52; font-size: clamp(11px, calc(var(--isz) * 0.2), 14px); margin-top: 2px; }
 .imgitem:active .face { transform: translateY(2px) scale(0.95); }
 .evt { gap: 10px; }
 .evt .tabs { width: min(100%, 600px); display: flex; gap: 6px; flex: none; }
