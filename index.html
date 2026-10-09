@@ -2164,7 +2164,6 @@ svg { display: block; }
   async function winLevel() {
     ended = true; busy = true;
     clearHint();
-    if (save.hearts < HEART_MAX) { save.hearts++; if (save.hearts >= HEART_MAX) save.hAt = Date.now(); persist(); renderHearts(); } // 클리어하면 시작할 때 쓴 하트를 돌려받아요
     const bonus = moves * 30;
     score += bonus;
     const movesLeft = moves;
@@ -2202,8 +2201,9 @@ svg { display: block; }
     winAfter(stars);
   }
 
+  let loseSpent = false;
   function loseLevel() {
-    ended = true; busy = true;
+    ended = true; busy = true; spendHeart(); loseSpent = true; // 졌을 때 하트 1개
     S('lose');
     clearHint();
     updateHud(false);
@@ -2352,7 +2352,7 @@ svg { display: block; }
     heartRegen();
     n = Math.min(MAX_LEVEL, Math.max(1, n));
     if (save.hearts <= 0) { showNoHeart(n); return false; }
-    delete over.dataset.noheart; spendHeart(); setupLevel(n); return true; // 스테이지를 시작할 때마다 하트 1개
+    delete over.dataset.noheart; setupLevel(n); return true; // 시작하려면 하트가 1개 이상 있어야 해요 (소진은 패배·다시하기 때만)
   }
   function spendHeart() {
     if (save.hearts <= 0) return;
@@ -2476,7 +2476,7 @@ svg { display: block; }
       if (pendingLv) { const n = pendingLv; pendingLv = 0; tryStart(n); }
     }
     else if (act === 'retryyes') {
-      hideOver();
+      hideOver(); spendHeart(); // 다시하기 하트 1개
       tryStart(level);
     }
     else if (act === 'retryno') { hideOver(); if (!ended) scheduleHint(); }
@@ -2515,7 +2515,9 @@ svg { display: block; }
     else if (act === 'close') { hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'more') {
       if (save.coins < CONT.cost) return;
-      save.coins -= CONT.cost; moves += CONT.moves; persist();
+      save.coins -= CONT.cost; moves += CONT.moves;
+      if (loseSpent) { loseSpent = false; save.hearts = Math.min(HEART_MAX, save.hearts + 1); if (save.hearts >= HEART_MAX) save.hAt = Date.now(); } // 이어하면 진 게 아니라서 하트를 돌려받아요
+      persist(); renderHearts();
       S('coin');
       ended = false; busy = false;
       hideOver(); updateHud(false); showToast('이동 +' + CONT.moves); scheduleHint();
@@ -2587,7 +2589,7 @@ svg { display: block; }
   }
 
   function setupLevel(n) {
-    hideFinger(true); hideItemTip(); madeMoves = 0; ctxShown = {};
+    loseSpent = false; hideFinger(true); hideItemTip(); madeMoves = 0; ctxShown = {};
     bMoves.classList.remove('tutglow'); bShuffle.classList.remove('tutglow'); bHammer.classList.remove('tutglow');
     level = Math.min(MAX_LEVEL, Math.max(1, n));
     save.level = level; persist();
