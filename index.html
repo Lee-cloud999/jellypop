@@ -662,6 +662,29 @@ svg { display: block; }
 @keyframes mhop { 50% { transform: translateY(-6px); } }
 @media (prefers-reduced-motion: reduce) { .mnode.cur, .mjelly, .mchest.ready { animation: none; } }
 .mhelp { padding: 0 14px; box-sizing: border-box; width: min(100%, 480px); margin-top: 18px; font-size: 13px; line-height: 1.55; color: var(--muted); text-align: center; }
+
+/* PC·아이패드: 안내 문구를 크게 */
+@media (min-width: 700px) {
+  .toast { font-size: 40px; padding: 4px 28px 6px; }
+  .over { background: color-mix(in srgb, var(--paper) 97%, transparent); }
+  .over p { font-size: 21px; line-height: 1.55; color: var(--ink); }
+  .over h3 { font-size: 46px; }
+  .over .btn { font-size: 21px; min-height: 56px; }
+  .over .coinline { font-size: 24px !important; }
+  .help { font-size: 17px; }
+  .tip { font-size: 18px; }
+  .cbox { width: min(100%, 460px); }
+  .cbox h3 { font-size: 32px; }
+  .cbox p { font-size: 19px; }
+  .cbox .btn { font-size: 20px; min-height: 54px; }
+  .hshop .hcard { width: min(100%, 440px); }
+  .hshop h3 { font-size: 40px; }
+  .hshop p { font-size: 19px; }
+  .hshop .btn { font-size: 20px; }
+  .mleg { font-size: 16px; }
+  .energy .et { font-size: 16px; }
+  .moves small, .goal span { font-size: 16px; }
+}
 </style>
 
 <div class="room" id="room" hidden role="dialog" aria-label="털실 방">
