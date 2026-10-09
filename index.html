@@ -235,6 +235,17 @@ svg { display: block; }
 .tile.pop .gem { transform: scale(0); opacity: 0; animation: popout 0.24s ease-in forwards; }
 .item.tutglow { animation: tutpulse 0.9s ease-in-out infinite; position: relative; z-index: 3; }
 @keyframes tutpulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255, 143, 184, 0)); } 50% { transform: scale(1.14); filter: drop-shadow(0 0 12px #ff8fb8) drop-shadow(0 0 20px #fff); } }
+.finger { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; font-size: 46px; line-height: 1; margin: -4px 0 0 -23px; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); animation: fing 1.9s ease-in-out infinite; }
+@keyframes fing {
+  0% { transform: translate(var(--x1), var(--y1)) scale(1.15); opacity: 0; }
+  12% { transform: translate(var(--x1), var(--y1)) scale(1); opacity: 1; }
+  28% { transform: translate(var(--x1), var(--y1)) scale(0.85); opacity: 1; }
+  68% { transform: translate(var(--x2), var(--y2)) scale(0.85); opacity: 1; }
+  84% { transform: translate(var(--x2), var(--y2)) scale(1); opacity: 1; }
+  100% { transform: translate(var(--x2), var(--y2)) scale(1.1); opacity: 0; }
+}
+.fbub { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); z-index: 7; pointer-events: none; background: var(--paper); color: var(--ink); font-weight: 800; font-size: 15px; line-height: 1.35; text-align: center; padding: 8px 14px; border-radius: 16px; box-shadow: 0 3px 0 var(--shade); outline: 2px dashed var(--stitch); outline-offset: -4px; width: max-content; max-width: 90%; }
+@media (min-width: 700px) { .fbub { font-size: 20px; } .finger { font-size: 58px; margin: -5px 0 0 -29px; } }
 .tile.rbmark .gem { animation: rbmark 0.55s ease-in-out both; }
 .tile.pop.slowpop .gem { animation: popout 0.5s ease-in forwards; }
 @keyframes rbmark { 0% { transform: scale(1); filter: none; } 50% { transform: scale(1.18); filter: brightness(1.5) drop-shadow(0 0 10px #fff) drop-shadow(0 0 16px #ff8fb8); } 100% { transform: scale(1.1); filter: brightness(1.35) drop-shadow(0 0 8px #fff); } }
@@ -1798,6 +1809,20 @@ svg { display: block; }
 
   /* ---------- hints ---------- */
   function clearSel() { if (selected) selected.el.classList.remove('sel'); selected = null; }
+  function hideFinger() { field.querySelectorAll('.finger,.fbub').forEach(e => e.remove()); }
+  function showFinger() {
+    if (level !== 1 || ended || busy || !cover.hidden || !lvEl.hidden) return;
+    const h = findHint(); if (!h) return;
+    hideFinger();
+    const [r1, c1, r2, c2] = h;
+    const f = document.createElement('div'); f.className = 'finger'; f.textContent = '👆';
+    f.style.setProperty('--x1', (c1 + 0.5) * cell + 'px'); f.style.setProperty('--y1', (r1 + 0.5) * cell + 'px');
+    f.style.setProperty('--x2', (c2 + 0.5) * cell + 'px'); f.style.setProperty('--y2', (r2 + 0.5) * cell + 'px');
+    const b = document.createElement('div'); b.className = 'fbub'; b.innerHTML = '젤리를 옆 젤리와 바꿔서<br>같은 색 <b>3개</b>를 맞춰 보세요!';
+    if (Math.max(r1, r2) < R / 2) { b.style.top = 'auto'; b.style.bottom = '8px'; } // 설명 말풍선은 손가락 반대편에
+    field.appendChild(b); field.appendChild(f);
+    grid[r1][c1].el.classList.add('hint'); grid[r2][c2].el.classList.add('hint');
+  }
   function clearHint() { clearTimeout(hintTimer); field.querySelectorAll('.tile.hint').forEach(el => el.classList.remove('hint')); }
   function scheduleHint() {
     clearTimeout(hintTimer);
@@ -1820,6 +1845,7 @@ svg { display: block; }
 
   async function trySwap(a, b) {
     if (busy || ended || isFixed(a) || isFixed(b)) return;
+    hideFinger();
     busy = true;
     clearHint(); clearSel();
     swapPos(a, b);
@@ -2330,6 +2356,7 @@ svg { display: block; }
   }
 
   function setupLevel(n) {
+    hideFinger();
     bMoves.classList.remove('tutglow'); bShuffle.classList.remove('tutglow');
     level = Math.min(MAX_LEVEL, Math.max(1, n));
     save.level = level; persist();
@@ -2352,6 +2379,7 @@ svg { display: block; }
     else if (level === 2 && cover.hidden && lvEl.hidden) setTimeout(showHammerTutorial, 500);
     else if (level === 4 && cover.hidden && lvEl.hidden) setTimeout(showMoveTutorial, 500);
     else if (level === 5 && cover.hidden && lvEl.hidden) setTimeout(showShuffleTutorial, 500);
+    else if (level === 1 && cover.hidden && lvEl.hidden) setTimeout(showFinger, 800);
     else if (cfg.gooN > 0 && (!save.seenGooTut || level === 6) && cover.hidden && lvEl.hidden) setTimeout(showGooTutorial, 500);
     else if (cfg.iceN > 0 && (!save.seenIce || level === 3) && cover.hidden && lvEl.hidden) setTimeout(showIceTutorial, 500);
     else if (cfg.crateN > 0 && (!save.seenCrateTut || level === 7) && cover.hidden && lvEl.hidden) setTimeout(showCrateTutorial, 500);
