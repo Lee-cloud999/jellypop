@@ -542,6 +542,7 @@ svg { display: block; }
 #mmsg .evmsg { margin-top: 4px; box-shadow: 0 4px 0 var(--shade), 0 8px 18px rgba(0,0,0,0.12); }
 .mapwrap { position: relative; width: 100%; flex: none; margin-top: 6px; background: #E2CDFA; overflow: hidden; }
 .mapwrap .mbgt { position: absolute; left: 50%; background-size: 100% 100%; background-repeat: no-repeat; pointer-events: none; }
+.mapwrap canvas.mrope { position: absolute; left: 0; top: 0; pointer-events: none; }
 .mapwrap svg.mpath { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .mnode { position: absolute; translate: -50% -50%; width: 60px; height: 60px; border: 4px solid; border-radius: 50%; padding: 0; background: var(--paper); color: var(--ink); font: 400 26px/1 var(--font-display); cursor: pointer; display: grid; place-items: center; box-shadow: 0 4px 0 var(--shade); }
 .mnode.t0 { border-color: #8FD9BC; } .mnode.t1 { border-color: #FFD982; } .mnode.t2 { border-color: #FF8FB1; width: 68px; height: 68px; font-size: 29px; }
@@ -2191,6 +2192,30 @@ svg { display: block; }
     }
     return d;
   }
+  let ropeImg = null;
+  function drawRope(pts, w, H) {
+    const cv = document.getElementById('mropeC'); if (!cv) return;
+    const go = () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1), ctx = cv.getContext('2d');
+      cv.width = Math.round(w * dpr); cv.height = Math.round(H * dpr);
+      cv.style.width = w + 'px'; cv.style.height = H + 'px';
+      const iw = ropeImg.naturalWidth, ih = ropeImg.naturalHeight, RH = 21, RPER = RH * iw / ih, RS = 30, step = 0.8;
+      ctx.scale(dpr, dpr);
+      let dist = 0;
+      pts.forEach(p => {
+        const sx = ((dist % RPER) / RPER) * iw, sw = Math.max(1, step / RPER * iw) + 1.5;
+        [-1, 1].forEach(sd => {
+          ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(p[2]);
+          const ww = Math.min(sw, iw - sx);
+          ctx.drawImage(ropeImg, sx, 0, ww, ih, -0.4, sd * RS - RH / 2, ww / iw * RPER + 0.2, RH);
+          ctx.restore();
+        });
+        dist += step;
+      });
+    };
+    if (ropeImg && ropeImg.complete) go();
+    else { ropeImg = new Image(); ropeImg.onload = go; ropeImg.src = ROPE; }
+  }
   function mapRender(center) {
     const { items, H, w } = mapPoints();
     mapEl.style.height = H + 'px';
@@ -2204,14 +2229,8 @@ svg { display: block; }
     const D = pathD(items), DP = pathD(items.slice(0, Math.max(reach, 1)));
     const NS = 'http://www.w3.org/2000/svg', tmp = document.createElementNS(NS, 'svg'), tp = document.createElementNS(NS, 'path');
     tp.setAttribute('d', D); tmp.appendChild(tp); tmp.style.cssText = 'position:absolute;visibility:hidden;width:0;height:0'; document.body.appendChild(tmp);
-    const TL = tp.getTotalLength(), RH = 21, RPER = RH * 2172 / 179, NSL = 18, STEP = RPER / NSL, RS = 30, rope = [];
-    for (let s0 = 0, i = 0; s0 < TL; s0 += STEP, i++) {
-      const p1 = tp.getPointAtLength(s0), p2 = tp.getPointAtLength(Math.min(TL, s0 + STEP)), ang = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
-      const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2, sx = (i % NSL) * 520 / NSL;
-      [-1, 1].forEach(sd => {
-        rope.push('<svg x="' + (-STEP / 2 - 0.6).toFixed(2) + '" y="' + (sd * RS - RH / 2).toFixed(1) + '" width="' + (STEP + 1.2).toFixed(2) + '" height="' + RH + '" viewBox="' + (sx - 0.6).toFixed(1) + ' 0 ' + (520 / NSL + 1.2).toFixed(1) + ' 43" preserveAspectRatio="none" overflow="hidden" transform="translate(' + mx.toFixed(1) + ' ' + my.toFixed(1) + ') rotate(' + ang.toFixed(1) + ')"><image href="' + ROPE + '" width="520" height="43"/></svg>');
-      });
-    }
+    const TL = tp.getTotalLength(), ropePts = [];
+    for (let s0 = 0; s0 <= TL; s0 += 0.8) { const p1 = tp.getPointAtLength(s0), p2 = tp.getPointAtLength(Math.min(TL, s0 + 1.5)), p0 = tp.getPointAtLength(Math.max(0, s0 - 1.5)); ropePts.push([p1.x, p1.y, Math.atan2(p2.y - p0.y, p2.x - p0.x)]); }
     document.body.removeChild(tmp);
     h += '<svg class="mpath" viewBox="0 0 ' + w + ' ' + H + '" aria-hidden="true"><defs>' +
       '<pattern id="rdP" patternUnits="userSpaceOnUse" width="400" height="400"><image href="' + ROADP + '" width="400" height="400"/></pattern>' +
@@ -2219,7 +2238,7 @@ svg { display: block; }
       '<path d="' + D + '" fill="none" stroke="#8E6FCF" stroke-width="68" stroke-linecap="round" stroke-linejoin="round"/>' +
       '<path d="' + D + '" fill="none" stroke="url(#rdC)" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>' +
       '<path d="' + DP + '" fill="none" stroke="url(#rdP)" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>' +
-      rope.join('') + '</svg>';
+      '</svg><canvas class="mrope" id="mropeC"></canvas>';
     const giftAt = {}; DECOR.forEach(d => { giftAt[d.lv] = d.name; });
     let curIt = null;
     const NUMY = [50, 50, 55];
@@ -2240,6 +2259,7 @@ svg { display: block; }
     if (curIt) h += '<img class="mjelly" alt="" src="' + IMG[1] + '" style="left:' + curIt.x.toFixed(1) + 'px;top:' + (curIt.y - curIt.hh / 2 - 2).toFixed(1) + 'px">';
 
     mapEl.innerHTML = h;
+    drawRope(ropePts, w, H);
     $('mmsg').innerHTML = mapMsg ? '<div class="evmsg mmsg" role="status"><b>' + mapMsg.title + '</b>' + (mapMsg.r ? chipHtml(mapMsg.r) : '') + '</div>' : '';
     $('mlegGift').innerHTML = ic('gift', 15) + ' 새 가구';
     $('mlegChest').innerHTML = '<img class="lgi" alt="" src="' + MAPIMG.c1.u + '"> 보상 상자';
