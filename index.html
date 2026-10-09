@@ -2093,6 +2093,11 @@ svg { display: block; }
       delete over.dataset.noheart; hideOver();
       if (pendingLv) { const n = pendingLv; pendingLv = 0; setupLevel(n); }
     }
+    else if (act === 'retryyes') {
+      hideOver();
+      if (save.hearts > 0) { spendHeart(); setupLevel(level); heartSpent = false; } else tryStart(level);
+    }
+    else if (act === 'retryno') { hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'heartwait') { delete over.dataset.noheart; hideOver(); openLevels(); }
     else if (act === 'pay') {
       const p = Object.values(PAID).flat().find(x => x.id === b.dataset.k);
@@ -2809,7 +2814,13 @@ svg { display: block; }
   });
   $('itemShop').addEventListener('click', () => { if (navBlocked()) return; S('click'); openShop(); });
   $('soundBtn').addEventListener('click', openSound);
-  $('retryBtn').addEventListener('click', () => { if (busy && !ended) { showToast('잠시 후에 눌러주세요'); return; } setupLevel(level); });
+  $('retryBtn').addEventListener('click', () => {
+    if (busy && !ended) { showToast('잠시 후에 눌러주세요'); return; }
+    heartRegen();
+    if (levelCleared(level)) { tryStart(level); return; } // 이미 깬 단계는 하트를 안 써요
+    clearHint();
+    showOver('<h3>다시 하기</h3><p>하트 1개를 잃게 돼요.<br>계속하시겠어요?</p><div class="row"><button class="btn primary" type="button" data-act="retryyes">계속</button><button class="btn" type="button" data-act="retryno">취소</button></div>');
+  });
 
   if (!(save.track >= 0 && save.track < A.TRACKS.length)) save.track = 0;
   tryStart(Math.min(save.level || 1, save.unlocked || 1));
