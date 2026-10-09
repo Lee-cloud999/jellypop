@@ -1584,9 +1584,9 @@ svg { display: block; }
     const first = !save.stars[level];
     const reward = 30 + stars * 20 + (first ? 30 : 0);
     const gifts = [];
-    if (stars === 3) { save.hammers++; gifts.push(ic('hammer', 16) + ' 망치 +1'); }
-    if (level % 3 === 0) { save.shuf++; gifts.push(ic('shuf', 16) + ' 섞기 +1'); }
-    if (level % 5 === 0) { save.mv++; gifts.push(ic('mv', 16) + ' 이동권 +1'); }
+    if (stars === 3 && prevStars < 3 && level % 2 === 0) { save.hammers++; gifts.push(ic('hammer', 16) + ' 망치 +1'); }
+    if (first && level % 6 === 0) { save.shuf++; gifts.push(ic('shuf', 16) + ' 섞기 +1'); }
+    if (first && level % 10 === 0) { save.mv++; gifts.push(ic('mv', 16) + ' 이동권 +1'); }
     DECOR.filter(d => d.lv === level && !save.best[level] && prevPlaced(d)).forEach(d => gifts.push(ic('gift', 16) + ' 새 가구: ' + d.name));
     const gain = Math.max(0, stars - prevStars);
     if (gain > 0) gifts.push(ic('star', 16) + ' 방 별 +' + gain);
@@ -2230,8 +2230,8 @@ svg { display: block; }
   const CHESTS = {
     5: { coins: 100, shuf: 1 },
     10: { coins: 150, hammers: 1, tickets: 1 },
-    15: { coins: 200, mv: 2, stars: 1 },
-    20: { coins: 250, hammers: 2, tickets: 1 },
+    15: { coins: 200, mv: 1, stars: 1 },
+    20: { coins: 250, hammers: 1, tickets: 1 },
     25: { coins: 300, stars: 2 },
     30: { coins: 500, stars: 3, tickets: 2 }
   };
