@@ -1835,7 +1835,7 @@ svg { display: block; }
     if (Math.max(r1, r2) < R / 2) { b.style.top = 'auto'; b.style.bottom = '8px'; } // 설명 말풍선은 손가락 반대편에
     field.appendChild(b); field.appendChild(f);
     grid[r1][c1].el.classList.add('hint'); grid[r2][c2].el.classList.add('hint');
-    f.addEventListener('animationend', () => { if (!fingerOn) return; setTimeout(() => { if (fingerOn) showFinger(vert ? 'h' : 'v'); }, 500); }); // 세로 → 가로 → 세로 …
+    f.addEventListener('animationend', () => { if (!fingerOn) return; if (vert) setTimeout(() => { if (fingerOn) showFinger('h'); }, 500); else { hideFinger(); scheduleHint(); } }); // 세로 한 번 → 가로 한 번 → 끝
   }
   function clearHint() { clearTimeout(hintTimer); field.querySelectorAll('.tile.hint').forEach(el => el.classList.remove('hint')); }
   function scheduleHint() {
