@@ -43,6 +43,7 @@
 html { color-scheme: light; }
 
 html, body { height: 100%; }
+.room, .over, .evt { overflow-x: hidden; }
 body {
   box-sizing: border-box;
   position: relative;
@@ -565,7 +566,7 @@ svg { display: block; }
 .dday.done::after { content: '✔'; position: absolute; top: 4px; right: 8px; font-size: 16px; color: #3EA67B; font-weight: 700; }
 .evt .btn.wide { width: 100%; min-height: 52px; font-size: 18px; justify-content: center; }
 .wheelwrap { position: relative; align-self: center; width: min(100%, 340px, calc(100dvh - 400px)); min-width: 220px; aspect-ratio: 1; padding: 8px; border-radius: 50%; background: var(--paper); box-shadow: 0 4px 0 var(--shade); outline: 3px dashed var(--stitch); outline-offset: -6px; }
-.wheelwrap svg { width: 100%; height: 100%; display: block; }
+.wheelwrap svg { width: 100%; height: 100%; display: block; clip-path: circle(50%); }
 .wheelwrap .ptr { position: absolute; left: 50%; top: -6px; translate: -50% 0; width: 0; height: 0; border-left: 13px solid transparent; border-right: 13px solid transparent; border-top: 26px solid #FF7FA6; filter: drop-shadow(0 2px 0 var(--shade)); z-index: 2; }
 .spininfo { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; color: var(--muted); white-space: nowrap; }
 .mrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: var(--paper); box-shadow: 0 3px 0 var(--shade); outline: 2px dashed var(--stitch); outline-offset: -4px; }
