@@ -1389,7 +1389,7 @@ svg { display: block; }
     crate1: '<rect x="8" y="10" width="84" height="82" rx="14" fill="#E2B27A" stroke="#A8743A" stroke-width="5"/><path d="M18 36h64M18 64h64" stroke="#C98F52" stroke-width="5" stroke-linecap="round"/><rect x="44" y="10" width="12" height="82" fill="#F4D9B0" stroke="#A8743A" stroke-width="3"/><path d="M30 14l10 22-12 14 14 14-8 18M72 30l-12 10 10 12-8 14" fill="none" stroke="#6F4520" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'
   };
   const obsSrc = k => OBSIMG[k] || ('data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' + OBSVG[k] + '</svg>'));
-  const ICE_LV = [3, 8, 10, 13, 16, 19, 22, 25, 28, 30], CRATE_LV = [12, 15, 18, 21, 24, 27, 29, 30], KEY_LV = [9, 14, 17, 23], GOO_LV = [6, 11, 20, 26];
+  const ICE_LV = [3, 8, 10, 13, 16, 19, 22, 25, 28, 30], CRATE_LV = [7, 12, 13, 15, 18, 21, 24, 27, 29, 30], KEY_LV = [9, 14, 17, 23], GOO_LV = [6, 11, 20, 26];
   const iceKey = (hp, max) => (max >= 2 && hp < max ? 'ice1' : 'ice0');
   const isFixed = t => !!(t && (t.crate || t.frozen || t.goo));
   const gooCount = () => grid.flat().filter(x => x && x.goo).length;
@@ -2078,6 +2078,13 @@ svg { display: block; }
       '<p>얼룩이 묻은 젤리는 움직일 수 없어요.<br>옆에서 젤리를 터뜨리거나, 얼룩 젤리까지 같은 색 3개를 맞추면 지워져요.<br>얼룩을 2번 연속 못 지우면 <b>옆 젤리로 번져요!</b></p>' +
       '<div class="row"><button class="btn primary" type="button" data-act="gooyes" style="min-height:52px;font-size:19px">알겠어요</button></div>');
   }
+  function showCrateTutorial() {
+    if ((save.seenCrateTut && level !== 7) || ended || !cfg || !(cfg.crateN > 0)) return;
+    clearHint();
+    showOver('<h3>나무 상자</h3><img src="' + obsSrc('crate0') + '" alt="" style="width:84px;height:84px;object-fit:contain">' +
+      '<p>상자는 움직일 수 없어요.<br>바로 옆에서 젤리를 터뜨리면 상자가 맞아요.<br><b>2번 맞히면</b> 상자가 부서져요!</p>' +
+      '<div class="row"><button class="btn primary" type="button" data-act="crateok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
+  }
   function showIceTutorial() {
     if ((save.seenIce && level !== 3) || ended || !cfg || !(cfg.iceN > 0)) return;
     clearHint();
@@ -2224,6 +2231,7 @@ svg { display: block; }
     }
     
     else if (act === 'keyok') { save.seenKey = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
+    else if (act === 'crateok') { save.seenCrateTut = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'gooyes') { save.seenGooTut = 1; persist(); hideOver(); if (!ended) scheduleHint(); }
     else if (act === 'shufok') { hideOver(); bShuffle.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'mvok') { hideOver(); bMoves.classList.add('tutglow'); if (!ended) scheduleHint(); }
@@ -2346,6 +2354,7 @@ svg { display: block; }
     else if (level === 5 && cover.hidden && lvEl.hidden) setTimeout(showShuffleTutorial, 500);
     else if (cfg.gooN > 0 && (!save.seenGooTut || level === 6) && cover.hidden && lvEl.hidden) setTimeout(showGooTutorial, 500);
     else if (cfg.iceN > 0 && (!save.seenIce || level === 3) && cover.hidden && lvEl.hidden) setTimeout(showIceTutorial, 500);
+    else if (cfg.crateN > 0 && (!save.seenCrateTut || level === 7) && cover.hidden && lvEl.hidden) setTimeout(showCrateTutorial, 500);
   }
 
   /* ---------- input ---------- */
