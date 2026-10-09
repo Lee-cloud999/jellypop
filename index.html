@@ -198,7 +198,7 @@ svg { display: block; }
 .boardwrap { padding: 7px; display: flex; justify-content: center; margin-inline: -8px; border-radius: 26px; outline-offset: -4px; }
 .field {
   position: relative;
-  width: min(100%, max(240px, calc((100dvh - 342px) * var(--ar, 1))));
+  width: min(100%, var(--fitw, max(240px, calc((100dvh - 342px) * var(--ar, 1)))));
   aspect-ratio: var(--ar, 1);
   border-radius: 16px;
   overflow: hidden;
@@ -1674,7 +1674,28 @@ svg { display: block; }
     t.r = r; t.c = c;
     t.el.style.transform = 'translate(' + (c * cell) + 'px,' + (r * cell) + 'px)';
   }
+  // 남는 화면 높이에 맞춰 판 크기를 정해서, 아래 메뉴가 항상 보이게 한다
+  let fitLast = '';
+  function fitBoard() {
+    const app = document.querySelector('.app');
+    if (!app || !field.offsetHeight) return;
+    const cs = getComputedStyle(document.body);
+    const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    let bottom = 0;
+    for (const ch of app.children) {
+      const cst = getComputedStyle(ch);
+      if (!ch.offsetHeight || cst.position === 'absolute' || cst.position === 'fixed') continue;
+      bottom = Math.max(bottom, ch.getBoundingClientRect().bottom);
+    }
+    const others = bottom - app.getBoundingClientRect().top - field.getBoundingClientRect().height;
+    const ar = C / R;
+    const w = Math.max(150, Math.floor((window.innerHeight - pad - others - 8) * ar));
+    const v = w + 'px';
+    if (v !== fitLast) { fitLast = v; field.style.setProperty('--fitw', v); }
+  }
+  window.addEventListener('resize', fitBoard);
   function measure() {
+    fitBoard();
     cell = field.clientWidth / C;
     field.style.setProperty('--ar', C / R);
     field.style.setProperty('--cell', cell + 'px');
@@ -1682,6 +1703,8 @@ svg { display: block; }
     for (const row of grid) for (const t of row) if (t) place(t, t.r, t.c);
   }
   new ResizeObserver(measure).observe(field);
+  { const ro = new ResizeObserver(fitBoard); for (const ch of document.querySelector('.app').children) if (!ch.contains(field)) ro.observe(ch); ro.observe(document.body); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitBoard);
 
   /* ---------- board logic ---------- */
   const same = (a, b) => !!b && !b.special && !b.crate && !b.key && b.type === a.type;
