@@ -2727,12 +2727,19 @@ svg { display: block; }
   /* ---------- 계정(게스트 / 구글 로그인) + 클라우드 저장 + 구매 복원 ----------
      Firebase 프로젝트를 만든 뒤 아래 FIREBASE_CONFIG에 설정값을 넣으면 로그인 기능이 켜져요.
      비어 있으면 지금처럼 기기 안 저장만 쓰는 게스트로 동작하고, 로그인 버튼은 보이지 않아요. */
-  const FIREBASE_CONFIG = null; // 예: { apiKey: '...', authDomain: '...firebaseapp.com', projectId: '...', appId: '...' }
+  const FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyDZ6KRq38dgV6VcpECVYafw0Ifbl4_M9sY',
+    authDomain: 'jellypop-2ee58.firebaseapp.com',
+    projectId: 'jellypop-2ee58',
+    storageBucket: 'jellypop-2ee58.firebasestorage.app',
+    messagingSenderId: '139350047185',
+    appId: '1:139350047185:web:ed82493f28103007c908f0'
+  }; // 웹용 Firebase 키는 공개돼도 괜찮아요. 보안은 Firestore 규칙이 지켜요.
   const FB_VER = '10.12.2';
   const DEVICE_KEYS = ['sfx', 'music', 'track', 'sfxVol', 'musVol', 'acct', 'cloudTs', 'iapDone'];
   const Acct = (() => {
     let prov = null, user = null, synced = false, upT = 0, busyA = false;
-    const available = () => !!prov || !!window.__jpProvider || !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey);
+    const available = () => !!prov; // 로그인 서버에 연결된 경우에만 로그인 화면을 보여줘요
     const loggedIn = () => !!(save.acct && save.acct.uid);
     const payload = () => { const o = {}; Object.keys(save).forEach(k => { if (DEVICE_KEYS.indexOf(k) < 0) o[k] = save[k]; }); return JSON.stringify(o); };
     const meaningful = s => (s.unlocked || 1) > 1 || Object.keys(s.best || {}).length > 0;
@@ -2806,7 +2813,7 @@ svg { display: block; }
     }
     async function init() {
       ui();
-      if (!available()) return;
+      if (!window.__jpProvider && !(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey)) return;
       try { prov = window.__jpProvider || await fbProvider(); } catch (e) { prov = null; ui(); return; }
       onPersist = queue;
       document.addEventListener('visibilitychange', () => { if (document.hidden) upload(); });
