@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#EFE7F8">
+<meta name="color-scheme" content="light only">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,6 +14,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>젤리팝</title>
+<meta name="color-scheme" content="light only">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -38,40 +40,7 @@
   --font-display: 'Jua', 'Noto Sans KR', sans-serif;
   --font-body: 'Noto Sans KR', system-ui, sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #241D31;
-    --knit-op: 0.07;
-    --paper: #352B47;
-    --ink: #F2EAFB;
-    --muted: #C6B8DA;
-    --accent: #E58FB0;
-    --on-accent: #2A1633;
-    --stitch: #5A4A78;
-    --edge: #4B3C66;
-    --shade: rgba(0, 0, 0, 0.35);
-    --cell-a: #3B3050;
-    --cell-b: #332945;
-    --gold: #F0C463;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #241D31;
-  --knit-op: 0.07;
-  --paper: #352B47;
-  --ink: #F2EAFB;
-  --muted: #C6B8DA;
-  --accent: #E58FB0;
-  --on-accent: #2A1633;
-  --stitch: #5A4A78;
-  --edge: #4B3C66;
-  --shade: rgba(0, 0, 0, 0.35);
-  --cell-a: #3B3050;
-  --cell-b: #332945;
-  --gold: #F0C463;
-  color-scheme: dark;
-}
+html { color-scheme: light; }
 
 html, body { height: 100%; }
 body {
@@ -1345,6 +1314,10 @@ svg { display: block; }
     moves -= Math.floor(Math.max(0, n - 50) / 20); // 후반부는 이동이 조금씩 줄어요
     if (PIN_LV.indexOf(n) >= 0) { pinN = Math.min(4, 2 + Math.floor((n - 50) / 20)); moves += 1; }
     if (TIMER_LV.indexOf(n) >= 0) { timerN = n === 100 ? 3 : 2; timerBase = Math.max(6, Math.floor(moves * 0.55)); }
+    while (tier < 2 && g.length > 2) { // 어려운 단계가 아니면 목표는 2개까지
+      let ix = -1; for (let i = g.length - 1; i >= 0; i--) if (g[i].k === 'c') { ix = i; break; }
+      g.splice(ix >= 0 ? ix : g.length - 1, 1);
+    }
     g.forEach(x => { if (x.k === 'c') x.n = Math.max(4, Math.round(x.n * 0.75)); }); // 색 젤리 목표 개수를 전체적으로 줄였어요
     const t2 = Math.round((700 + n * 50) / 50) * 50;
     // 별: 남은 이동 수로 결정 (쉬운 단계일수록 3개 기준이 높아요)
@@ -2636,6 +2609,18 @@ svg { display: block; }
     delete over.dataset.noheart; setupLevel(n); return true; // 시작하려면 하트가 1개 이상 있어야 해요 (소진은 패배·다시하기 때만)
   }
   let pendingHeartTip = false;
+  // 화면이 저절로 꺼지지 않게 해요
+  let wake = null;
+  async function keepAwake() {
+    try {
+      if (!('wakeLock' in navigator) || document.visibilityState !== 'visible' || (wake && !wake.released)) return;
+      wake = await navigator.wakeLock.request('screen');
+      wake.addEventListener('release', () => { wake = null; });
+    } catch (e) { wake = null; }
+  }
+  document.addEventListener('visibilitychange', keepAwake);
+  document.addEventListener('pointerdown', keepAwake);
+  keepAwake();
   function spendHeart() {
     if (save.hearts <= 0) return;
     if (!save.heartTip) pendingHeartTip = true;
@@ -3369,7 +3354,7 @@ svg { display: block; }
     if (navBlocked()) return;
     S('click');
     if (ended) { openMap(); return; }
-    openConfirm({ title: '게임을 그만두시겠어요?', text: '지금 하던 게임은 저장되지 않아요.', yes: '계속', no: '취소', onYes: openMap });
+    openConfirm({ title: '게임을 그만두시겠어요?', text: '지금 나가면 하트가 1개 줄어들고, 하던 게임은 저장되지 않아요.', yes: '계속', no: '취소', onYes: () => { if (!ended) { spendHeart(); loseSpent = false; } openMap(); } });
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !evEl.hidden && !spinning) { closeEvent(); e.stopImmediatePropagation(); } });
   evWeek(); persist(); evDotSync();
