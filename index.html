@@ -116,6 +116,12 @@ svg { display: block; }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .hl { display: flex; gap: 8px; }
 .app > .energy { position: relative; top: -8px; }
+.hshop { position: fixed; inset: 0; z-index: 90; background: rgba(60, 30, 80, .45); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.hshop[hidden] { display: none; }
+.hshop .hcard { width: min(100%, 360px); background: var(--bg); border-radius: 28px; padding: 22px 18px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,.28); }
+.hshop h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 34px; line-height: 1.15; }
+.hshop p { margin: 0; color: var(--muted); }
+.hshop .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; }
 .energy { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 2px 0 -2px; min-height: 30px; }
 .energy img { width: 26px; height: 26px; display: block; }
 .energy .et { font-size: 13px; font-weight: 800; color: #8a5a3c; min-width: 38px; text-align: left; margin-left: 4px; }
@@ -703,6 +709,7 @@ svg { display: block; }
   </div>
 </div>
 <div class="cover" id="cover"><img id="coverImg" alt=""><h1>젤리팝</h1><button type="button" id="coverGo">▶ 시작</button></div>
+<div class="hshop" id="hshop" hidden><div class="hcard" id="hcard"></div></div>
 <button class="tapsound" id="tapSound" type="button" hidden>🔊 눌러서 소리 켜기</button>
 <div class="app">
   <header class="top">
@@ -1973,21 +1980,30 @@ svg { display: block; }
     const need = HEART_MAX - save.hearts, c1 = save.coins >= HEART_COST, cAll = save.coins >= HEART_COST * need;
     let hs = '';
     for (let i = 0; i < HEART_MAX; i++) hs += '<img src="' + HEART_IMG[i < save.hearts ? 'f' : (i === save.hearts && heartHalf() ? 'h' : 'e')] + '" alt="" style="width:34px;height:34px">';
-    showOver('<h3>하트 충전</h3><div style="display:flex;gap:4px;justify-content:center">' + hs + '</div>' +
+    $('hcard').innerHTML = ('<h3>하트 충전</h3><div style="display:flex;gap:4px;justify-content:center">' + hs + '</div>' +
       '<div class="coinline" style="font-size:20px">' + icoImg('coin', 22) + ' 보유 ' + fmt(save.coins) + '</div>' +
       (need > 0
         ? '<div class="row"><button class="btn primary wide" type="button" data-act="hshop1"' + (c1 ? '' : ' disabled') + ' style="min-height:52px;font-size:19px;justify-content:center">하트 1개 &nbsp;' + icoImg('coin', 22) + ' ' + HEART_COST + '</button></div>' +
           (need > 1 ? '<div class="row"><button class="btn wide" type="button" data-act="hshopall"' + (cAll ? '' : ' disabled') + ' style="min-height:48px;font-size:17px;justify-content:center">가득 채우기 (' + need + '개) &nbsp;' + icoImg('coin', 20) + ' ' + HEART_COST * need + '</button></div>' : '') +
           (c1 ? '' : '<p style="margin:0;font-size:13px">코인이 부족해요. 상점에서 채울 수 있어요.</p>')
         : '<p>하트가 가득 찼어요!</p>') +
-      '<div class="row"><button class="btn" type="button" data-act="hshopclose">닫기</button><button class="btn" type="button" data-act="shop">상점</button></div>');
+      '<div class="row"><button class="btn" type="button" data-act="hshopclose">닫기</button></div>');
+    $('hshop').hidden = false;
   }
   function showHeartShop() {
     heartRegen(); clearHint();
-    hshopMap = !lvEl.hidden;
-    if (hshopMap) closeMap();
     drawHeartShop();
   }
+  $('hshop').addEventListener('click', e => {
+    const b = e.target.closest('[data-act]');
+    if (!b && e.target.id !== 'hshop') return;
+    const act = b ? b.dataset.act : 'hshopclose';
+    if (act === 'hshopclose') { $('hshop').hidden = true; if (lvEl.hidden && !ended) scheduleHint(); return; }
+    if (b.disabled) return;
+    const k = act === 'hshop1' ? 1 : HEART_MAX - save.hearts, cost = k * HEART_COST;
+    if (k < 1 || save.coins < cost) return;
+    save.coins -= cost; save.hearts = Math.min(HEART_MAX, save.hearts + k); persist(); S('coin'); renderHearts(); updateHud(false); drawHeartShop();
+  });
   function tryStart(n) {
     heartRegen();
     n = Math.min(MAX_LEVEL, Math.max(1, n));
@@ -2126,7 +2142,7 @@ svg { display: block; }
       if (k < 1 || save.coins < cost) return;
       save.coins -= cost; save.hearts = Math.min(HEART_MAX, save.hearts + k); persist(); S('coin'); renderHearts(); updateHud(false); drawHeartShop();
     }
-    else if (act === 'hshopclose') { hideOver(); if (hshopMap) { hshopMap = false; openMap(); } else if (!ended) scheduleHint(); }
+    
     else if (act === 'heartwait') { delete over.dataset.noheart; hideOver(); openLevels(); }
     else if (act === 'pay') {
       const p = Object.values(PAID).flat().find(x => x.id === b.dataset.k);
