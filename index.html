@@ -803,7 +803,7 @@ svg { display: block; }
   </div>
 </div>
 <div id="testBadge" hidden style="position:fixed;left:0;right:0;top:0;z-index:99999;background:#FF4F6D;color:#fff;font:700 15px/1 'Noto Sans KR',sans-serif;text-align:center;padding:calc(7px + env(safe-area-inset-top,0px)) 8px 7px;box-shadow:0 2px 6px rgba(0,0,0,.25);pointer-events:none;letter-spacing:.02em">⚠ 테스트 모드 켜짐 (하트 안 줄어요)</div>
-<div class="cover" id="cover"><img id="coverImg" alt=""><h1>젤리팝</h1><div id="coverLoad" role="status" aria-live="polite"><span class="cbar"><i></i></span><small>불러오는 중…</small></div><button type="button" id="coverGo" disabled>▶ 시작</button><div id="coverWho" hidden></div><button type="button" class="sub" id="coverLogin" hidden>구글 계정으로 로그인</button></div>
+<div class="cover" id="cover"><img id="coverImg" alt=""><h1>젤리팝</h1><div id="coverLoad" role="status" aria-live="polite"><span class="cbar"><i></i></span><small>불러오는 중…</small></div><button type="button" id="coverGo" disabled>▶ 시작</button><div id="coverWho" hidden></div><button type="button" class="sub" id="coverLogin" hidden>구글 계정으로 로그인</button><button type="button" id="coverTest" hidden style="position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);min-height:40px;padding:8px 18px;font:700 14px 'Noto Sans KR',sans-serif;border-radius:999px;border:2px dashed #FF4F6D;background:#fff;color:#FF4F6D;box-shadow:none;white-space:nowrap"></button></div>
 <div class="hshop" id="hshop" hidden><div class="hcard" id="hcard"></div></div>
 <button class="tapsound" id="tapSound" type="button" hidden>🔊 눌러서 소리 켜기</button>
 <div class="app">
@@ -915,21 +915,23 @@ svg { display: block; }
   if (typeof save.mv !== 'number') save.mv = 1;
   if (typeof save.shuf !== 'number') save.shuf = 1;
   if (typeof save.hammers !== 'number') save.hammers = 2;
-  // ★ 테스트 도구: 시작 화면의 '젤리팝' 제목을 4초 안에 7번 누르면 테스트 모드가 켜지고 꺼져요 (이 기기에만 저장돼요).
+  // ★ 테스트 도구: 시작 화면 아래의 '테스트 모드' 버튼을 누르면 켜지고, 다시 누르면 꺼져요 (이 기기에만 저장돼요).
   //   테스트 모드에서는 하트가 줄지 않고, 단계 지도에서 모든 단계를 골라 시작할 수 있어요.
-  //   앱으로 올리기 전에는 TEST_TOOLS를 false로 바꾸세요. 그러면 켜는 방법 자체가 없어져요.
+  //   앱으로 올리기 전에는 TEST_TOOLS를 false로 바꾸세요. 그러면 버튼과 기능이 모두 없어져요.
   const TEST_TOOLS = true;
   let testFlag = false; try { testFlag = localStorage.getItem('jellypop-test') === '1'; } catch (e) { /* ignore */ }
   const testOn = () => TEST_TOOLS && testFlag;
+  function testUi() {
+    const tb = document.getElementById('testBadge'); if (tb) tb.hidden = !testOn();
+    const bt = document.getElementById('coverTest'); if (bt) { bt.hidden = !TEST_TOOLS; bt.textContent = testOn() ? '테스트 모드 끄기 (지금 켜짐)' : '테스트 모드 켜기'; }
+  }
   function setTest(v) {
     testFlag = !!v; try { localStorage.setItem('jellypop-test', v ? '1' : '0'); } catch (e) { /* ignore */ }
-    const tb = document.getElementById('testBadge'); if (tb) tb.hidden = !testOn();
-    showToast(v ? '테스트 모드 켜짐 (하트 안 줄고 모든 단계 열림)' : '테스트 모드 꺼짐');
+    testUi();
     if (typeof lvEl !== 'undefined' && !lvEl.hidden) mapRender(false);
   }
-  { const tb = document.getElementById('testBadge'); if (tb) tb.hidden = !testOn();
-    const h1 = document.querySelector('.cover h1'); let taps = [];
-    if (TEST_TOOLS && h1) h1.addEventListener('click', () => { const n = Date.now(); taps = taps.filter(x => n - x < 4000); taps.push(n); if (taps.length >= 7) { taps = []; setTest(!testOn()); } }); }
+  testUi();
+  { const bt = document.getElementById('coverTest'); if (TEST_TOOLS && bt) bt.addEventListener('click', () => setTest(!testOn())); }
   const HEART_MAX = 5, HEART_MS = 20 * 60 * 1000, HEART_COST = 50;
   if (typeof save.hearts !== 'number') save.hearts = HEART_MAX;
   if (typeof save.hAt !== 'number') save.hAt = Date.now();
