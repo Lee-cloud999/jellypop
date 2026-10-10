@@ -232,7 +232,7 @@ svg { display: block; }
 .itembub::after { content: ''; position: absolute; left: var(--ax, 50%); bottom: -8px; margin-left: -8px; border: 8px solid transparent; border-bottom: 0; border-top-color: var(--paper); }
 @keyframes ibIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (min-width: 700px) { .itembub { font-size: 19px; max-width: 420px; } .itembub small { font-size: 15px; } }
-.finger { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; font-size: 46px; line-height: 1; margin: -4px 0 0 -23px; filter: grayscale(1) brightness(2.6) drop-shadow(0 0 1.5px rgba(60,40,80,.9)) drop-shadow(0 3px 3px rgba(0,0,0,.35)); animation: fing 1.9s ease-in-out infinite; }
+.finger { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; font-size: 46px; line-height: 1; margin: -4px 0 0 -23px; filter: grayscale(1) brightness(2.6) drop-shadow(0 0 1.5px rgba(60,40,80,.9)) drop-shadow(0 3px 3px rgba(0,0,0,.35)); animation: fing 1.9s ease-in-out infinite both; opacity: 0; }
 @keyframes fing {
   0% { transform: translate(var(--x1), var(--y1)) scale(1.15); opacity: 0; }
   12% { transform: translate(var(--x1), var(--y1)) scale(1); opacity: 1; }
@@ -2002,7 +2002,7 @@ svg { display: block; }
     hideFinger(true); fingerOn = true; stickyUntil = Date.now() + (dur || 2400);
     const [r1, c1, r2, c2] = h;
     const f = document.createElement('div'); f.className = 'finger'; f.textContent = '👆';
-    f.style.animationIterationCount = '1';
+    f.style.animationIterationCount = '1'; f.style.animationFillMode = 'both';
     f.style.setProperty('--x1', (c1 + 0.5) * cell + 'px'); f.style.setProperty('--y1', (r1 + 0.5) * cell + 'px');
     f.style.setProperty('--x2', (c2 + 0.5) * cell + 'px'); f.style.setProperty('--y2', (r2 + 0.5) * cell + 'px');
     const b = document.createElement('div'); b.className = 'fbub'; b.innerHTML = html;
