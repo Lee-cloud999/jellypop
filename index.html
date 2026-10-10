@@ -1307,22 +1307,23 @@ svg { display: block; }
       if (n >= 26) g.push({ k: 'c', t: c, n: Math.round(b0 * 0.6) });
       moves = n >= 26 ? 15 : 14;
     }
+    const ob = (v, lo) => n >= 13 ? Math.max(lo, Math.round(v * 0.7)) : v; // 13단계부터 장애물 개수를 30% 줄였어요
     const hasIce = ICE_LV.indexOf(n) >= 0, hasCrate = CRATE_LV.indexOf(n) >= 0;
     let iceN = 0, crateN = 0, iceHp = 1;
     if (hasIce || hasCrate) {
       g.splice(1); // 장애물 단계: 색 목표 하나 + 장애물 목표
-      if (hasIce) { iceN = Math.min(10, 3 + Math.floor(n / 4)); iceHp = n >= 16 ? 2 : 1; g.push({ k: 'i', n: iceN }); }
-      if (hasCrate) { crateN = Math.min(5, 2 + Math.floor(n / 10)); g.push({ k: 'x', n: crateN }); }
+      if (hasIce) { iceN = ob(Math.min(10, 3 + Math.floor(n / 4)), 3); iceHp = n >= 16 ? 2 : 1; g.push({ k: 'i', n: iceN }); }
+      if (hasCrate) { crateN = ob(Math.min(5, 2 + Math.floor(n / 10)), 2); g.push({ k: 'x', n: crateN }); }
       moves += hasIce && hasCrate ? 5 : hasIce ? 3 : 2;
     }
     if (n === 3) { g.push({ k: 'b', n: 1 }); moves += 3; } // 3단계: T자로 맞춰 폭탄 만들기
     let yarnN = 0, pinN = 0, timerN = 0, timerBase = 0;
-    if (YARN_LV.indexOf(n) >= 0) { g.splice(1); yarnN = Math.min(7, 4 + Math.floor((n - 30) / 10)); g.push({ k: 'y', n: yarnN }); moves += 3; }
+    if (YARN_LV.indexOf(n) >= 0) { g.splice(1); yarnN = ob(Math.min(7, 4 + Math.floor((n - 30) / 10)), 3); g.push({ k: 'y', n: yarnN }); moves += 3; }
     let keyN = 0, gooN = 0;
-    if (KEY_LV.indexOf(n) >= 0) { g.splice(1); g.forEach(x => { if (x.k === 'c') x.n = Math.max(4, Math.round(x.n * (n === 14 ? 0.5 : 0.7))); }); keyN = Math.min(3, 2 + Math.floor(n / 20)); g.push({ k: 'k', n: keyN }); moves += n === 14 ? 12 : 7; }
-    if (GOO_LV.indexOf(n) >= 0) { g.splice(1); gooN = Math.min(4, 2 + Math.floor(n / 12)); g.push({ k: 'g', n: gooN }); moves += 2; }
+    if (KEY_LV.indexOf(n) >= 0) { g.splice(1); g.forEach(x => { if (x.k === 'c') x.n = Math.max(4, Math.round(x.n * (n === 14 ? 0.5 : 0.7))); }); keyN = ob(Math.min(3, 2 + Math.floor(n / 20)), 2); g.push({ k: 'k', n: keyN }); moves += n === 14 ? 12 : 7; }
+    if (GOO_LV.indexOf(n) >= 0) { g.splice(1); gooN = ob(Math.min(4, 2 + Math.floor(n / 12)), 2); g.push({ k: 'g', n: gooN }); moves += 2; }
     moves -= Math.floor(Math.max(0, n - 50) / 20); // 후반부는 이동이 조금씩 줄어요
-    if (PIN_LV.indexOf(n) >= 0) { pinN = Math.min(4, 2 + Math.floor((n - 50) / 20)); moves += 1; }
+    if (PIN_LV.indexOf(n) >= 0) { pinN = ob(Math.min(4, 2 + Math.floor((n - 50) / 20)), 2); moves += 1; }
     if (TIMER_LV.indexOf(n) >= 0) { timerN = n === 100 ? 3 : 2; timerBase = Math.max(6, Math.floor(moves * 0.55)); }
     while (tier < 2 && g.length > 2) { // 어려운 단계가 아니면 목표는 2개까지
       let ix = -1; for (let i = g.length - 1; i >= 0; i--) if (g[i].k === 'c') { ix = i; break; }
