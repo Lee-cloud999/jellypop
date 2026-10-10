@@ -1658,7 +1658,7 @@ svg { display: block; }
     t.el.style.transform = 'translate(' + (c * cell) + 'px,' + (r * cell) + 'px)';
   }
   // 남는 화면 높이에 맞춰 판 크기를 정해서, 아래 메뉴가 항상 보이게 한다
-  let fitLast = '';
+  let fitLast = '', vhW = 0, vhMin = 0;
   function fitBoard() {
     const app = document.querySelector('.app');
     if (!app || !field.offsetHeight) return;
@@ -1672,7 +1672,10 @@ svg { display: block; }
     }
     const others = bottom - app.getBoundingClientRect().top - field.getBoundingClientRect().height;
     const ar = C / R;
-    const w = Math.max(150, Math.floor((window.innerHeight - pad - others - 8) * ar));
+    // 주소창/하단바가 나왔다 들어가며 화면 높이가 흔들려도 판이 커졌다 작아지지 않게, 같은 가로폭에서는 가장 작았던 높이를 기준으로 고정
+    const iw = window.innerWidth, ih = window.innerHeight;
+    if (iw !== vhW || vhMin < 300) { vhW = iw; vhMin = ih; } else if (ih >= 300 && ih < vhMin) vhMin = ih;
+    const w = Math.max(150, Math.floor((vhMin - pad - others - 8) * ar));
     const v = w + 'px';
     if (v !== fitLast) { fitLast = v; field.style.setProperty('--fitw', v); }
   }
