@@ -570,6 +570,36 @@ svg { display: block; }
 .dday.today { background: var(--accent); color: var(--on-accent); outline: 3px solid var(--ink); outline-offset: -3px; }
 .dday.today .dn { color: var(--on-accent); }
 .dday.done { opacity: 0.55; }
+.e7h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 6px; }
+.e7t { display: inline-block; font: 400 24px/1.2 var(--font-display); color: #C0489A; background: #FFD6EA; padding: 4px 18px 6px; border-radius: 14px; box-shadow: 0 3px 0 #F0B3D2; }
+.e7h small { font-size: 12.5px; font-weight: 700; color: var(--muted); text-align: right; }
+.e7note { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--muted); line-height: 1.45; }
+.e7days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; margin-bottom: 12px; }
+.e7d { position: relative; border: 0; border-radius: 14px; padding: 7px 0 6px; font: 400 17px/1.15 var(--font-display); color: #fff; background: #B983E8; cursor: pointer; }
+.e7d.lock { background: #E9DCF7; color: #B9A7D4; }
+.e7d.now { background: #FFC94D; color: #5A4B6B; }
+.e7d.sel { outline: 3px solid var(--ink); outline-offset: 1px; }
+.e7d .e7bang { position: absolute; top: -6px; right: -4px; width: 18px; height: 18px; border-radius: 50%; background: #FF4F6D; color: #fff; font: 700 12px/18px sans-serif; font-style: normal; }
+.e7d .e7ok { position: absolute; bottom: -6px; left: 50%; margin-left: -9px; width: 18px; height: 18px; border-radius: 50%; background: #3EA67B; color: #fff; font: 700 11px/18px sans-serif; font-style: normal; }
+.e7row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; margin-bottom: 8px; border-radius: 16px; background: #FFF0F7; }
+.e7row.ready { background: linear-gradient(180deg, #8EDDB0, #5FC98C); }
+.e7row.got { opacity: 0.6; }
+.e7i { flex: none; width: 40px; height: 40px; display: grid; place-items: center; }
+.e7x { flex: 1; min-width: 0; }
+.e7x b { display: block; font: 400 16px/1.2 var(--font-display); margin-bottom: 4px; }
+.e7bar { position: relative; height: 16px; margin: 0; background: #DAD0DC; }
+.e7bar i { display: block; height: 100%; background: #46C26E; }
+.e7bar em { position: absolute; inset: 0; display: grid; place-items: center; font: 700 11px/1 sans-serif; font-style: normal; color: #4A3B5C; }
+.e7r { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font-size: 12px; font-weight: 700; }
+.e7r i { font-style: normal; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.e7r .btn { min-height: 34px; padding: 4px 12px; font-size: 14px; }
+.e7box { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; margin-top: 4px; border-radius: 16px; background: #FFF0F7; }
+.e7st { display: flex; gap: 6px; font-size: 34px; line-height: 1; color: #E3D5E8; }
+.e7st .on { color: #FFC94D; text-shadow: 0 2px 0 #E8A92A; }
+.e7bx { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.e7bx small { font-size: 12px; font-weight: 700; color: var(--muted); }
+.e7box.ready .btn { animation: mpulse 0.9s ease-in-out infinite; }
+.e7foot { margin: 10px 0 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); }
 .dday.done::after { content: '✔'; position: absolute; top: 4px; right: 8px; font-size: 16px; color: #3EA67B; font-weight: 700; }
 .evt .btn.wide { width: 100%; min-height: 52px; font-size: 18px; justify-content: center; }
 .wheelwrap { position: relative; align-self: center; width: min(100%, 340px, calc(100dvh - 400px)); min-width: 220px; aspect-ratio: 1; padding: 8px; border-radius: 50%; background: var(--paper); box-shadow: 0 4px 0 var(--shade); outline: 3px dashed var(--stitch); outline-offset: -6px; }
@@ -2448,7 +2478,7 @@ svg { display: block; }
     save.stars[level] = Math.max(save.stars[level] || 0, stars);
     save.best[level] = Math.max(save.best[level] || 0, score);
     save.unlocked = Math.min(MAX_LEVEL, Math.max(save.unlocked, level + 1));
-    evTrack(level, stars);
+    evTrack(level, stars, reward);
     persist();
     updateHud(true);
     await clearFinale(movesLeft);
@@ -3270,7 +3300,8 @@ svg { display: block; }
   const weekStart = () => addDays(dayKey(), -((new Date().getDay() + 6) % 7));
   if (!save.ev || typeof save.ev !== 'object') save.ev = {};
   const EV = Object.assign({ last: '', streak: 0, spinDay: '', paidDay: '', paid: 0, tickets: 0, week: '', clears: 0, three: 0, claimed: {} }, save.ev);
-  EV.e = Object.assign({ d: 0, cd: '', tc: 0, td: '' }, (EV.e && typeof EV.e === 'object') ? EV.e : {}); // 7일 이벤트 진행
+  EV.e = Object.assign({ round: 1, start: '', pr: {}, cl: {}, bx: {} }, (EV.e && typeof EV.e === 'object') ? EV.e : {}); // 7일 과제 진행
+  ['pr', 'cl', 'bx'].forEach(k => { if (!EV.e[k] || typeof EV.e[k] !== 'object') EV.e[k] = {}; });
   save.ev = EV;
   if (typeof save.bonus !== 'number') save.bonus = 0;
   const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -3278,7 +3309,7 @@ svg { display: block; }
     const w = weekStart();
     if (EV.week !== w) { EV.week = w; EV.clears = 0; EV.three = 0; EV.claimed = {}; }
   }
-  function evTrack(lv, stars) { evWeek(); e7Norm(); EV.e.tc++; EV.clears++; if (stars === 3) EV.three++; }
+  function evTrack(lv, stars, reward) { evWeek(); const di = e7Norm(), p = EV.e.pr[di] || (EV.e.pr[di] = { clears: 0, three: 0, stars: 0, coins: 0 }); p.clears++; p.stars += stars; p.coins += reward || 0; if (stars === 3) p.three++; EV.clears++; if (stars === 3) EV.three++; }
   function give(r) {
     if (r.coins) save.coins += r.coins;
     if (r.hammers) save.hammers += r.hammers;
@@ -3360,31 +3391,43 @@ svg { display: block; }
     { id: 'c15', t: '단계 15번 클리어', n: 15, k: 'clears', r: { coins: 300, tickets: 2 } }
   ];
   const mReady = m => EV[m.k] >= m.n && !EV.claimed[m.id];
-  /* 7일 이벤트: 하루에 한 번 오늘의 미션을 채우고 보상을 받아요. 하루를 거르면 그 자리에서 이어서 해요 */
-  const E7 = [
-    { n: 1, r: { coins: 100 }, i: 'COIN', t: '코인 100' },
-    { n: 2, r: { hammers: 1, shuf: 1 }, i: 'hammer', t: '망치 1 · 섞기 1' },
-    { n: 2, r: { tickets: 1 }, i: 'ticket', t: '룰렛권 1개' },
-    { n: 3, r: { coins: 200 }, i: 'COIN', t: '코인 200' },
-    { n: 3, r: { mv: 2 }, i: 'mv', t: '이동권 2개' },
-    { n: 4, r: { stars: 2 }, i: 'star', t: '방 별 2개' },
-    { n: 5, r: { coins: 300, stars: 2, tickets: 2 }, i: 'giftbox', t: '코인 300 · 방 별 2 · 룰렛권 2' }
-  ];
+  /* 일일 과제 (7일): 날짜마다 과제 5개. 3개를 받으면 선물 상자를 열 수 있어요. 7일이 지나면 새 과제로 1일차부터 다시 시작해요 */
+  const dayNum = k => { const a = k.split('-').map(Number); return Math.round(Date.UTC(a[0], a[1] - 1, a[2]) / 864e5); };
   function e7Norm() {
     const t = dayKey(), e = EV.e;
-    if (e.td !== t) { e.td = t; e.tc = 0; }
-    if (e.d >= 7 && e.cd !== t) e.d = 0; // 다 끝낸 다음 날부터 새로 시작
+    if (!e.start || dayNum(t) < dayNum(e.start)) { e.start = t; e.round = e.round || 1; }
+    let idx = dayNum(t) - dayNum(e.start);
+    if (idx >= 7) { e.round = (e.round || 1) + 1; e.start = t; e.pr = {}; e.cl = {}; e.bx = {}; idx = 0; }
+    return idx;
   }
-  function e7State() {
-    e7Norm();
-    const e = EV.e, t = dayKey(), done = e.cd === t, finished = e.d >= 7, idx = Math.min(e.d, 6);
-    return { idx, done, finished, ok: !done && !finished && e.tc >= E7[idx].n };
+  const E7_BOX = [{ coins: 100, hammers: 1 }, { coins: 100, shuf: 1 }, { tickets: 1, mv: 1 }, { coins: 150, hammers: 1 }, { tickets: 1, shuf: 1, mv: 1 }, { coins: 200, stars: 1 }, { coins: 300, stars: 2, tickets: 2 }];
+  const E7_N = { c: [2, 3, 3, 4, 4, 5, 5], t: [1, 1, 2, 2, 2, 3, 3], s: [4, 5, 6, 7, 8, 9, 10], m: [150, 200, 250, 300, 350, 400, 450] };
+  function e7Tasks(di) {
+    const d = di + 1, p = EV.e.pr[di] || {};
+    const sr = [{ shuf: 1 }, { mv: 1 }, { hammers: 1 }][di % 3];
+    return [
+      { id: 'a', t: '오늘 출석하기', n: 1, cur: di <= e7Norm() ? 1 : 0, r: { coins: 20 + d * 10 }, i: 'cal' },
+      { id: 'c', t: '단계 ' + E7_N.c[di] + '번 클리어', n: E7_N.c[di], cur: p.clears || 0, r: { coins: 30 + d * 10 }, i: 'flag' },
+      { id: 't', t: '별 3개로 ' + E7_N.t[di] + '번 클리어', n: E7_N.t[di], cur: p.three || 0, r: di % 2 ? { shuf: 1 } : { hammers: 1 }, i: 'star' },
+      { id: 's', t: '별 ' + E7_N.s[di] + '개 모으기', n: E7_N.s[di], cur: p.stars || 0, r: sr, i: 'gem' },
+      { id: 'm', t: '클리어 코인 ' + E7_N.m[di] + '개 모으기', n: E7_N.m[di], cur: p.coins || 0, r: { coins: 40 + d * 10 }, i: 'COIN' }
+    ];
   }
+  const e7Key = (di, id) => di + ':' + id;
+  const e7Got = di => e7Tasks(di).filter(t => EV.e.cl[e7Key(di, t.id)]).length;
+  const e7BoxReady = di => e7Got(di) >= 3 && !EV.e.bx[di];
+  const e7TaskReady = (di, t) => t.cur >= t.n && !EV.e.cl[e7Key(di, t.id)];
+  function e7Ready() {
+    const idx = e7Norm();
+    for (let di = 0; di <= idx; di++) if (e7Tasks(di).some(t => e7TaskReady(di, t)) || e7BoxReady(di)) return true;
+    return false;
+  }
+  const e7DayReady = di => di <= e7Norm() && (e7Tasks(di).some(t => e7TaskReady(di, t)) || e7BoxReady(di));
   function evDots() {
     evWeek();
     const d = !dailyState().claimed;
     const sp = spinState(), w = sp.free || EV.tickets > 0;
-    const m = MISSIONS.some(mReady) || e7State().ok;
+    const m = e7Ready();
     return { d, w, m };
   }
   function evDotSync() {
@@ -3399,7 +3442,7 @@ svg { display: block; }
     const x = evDots();
     $('dotDaily').hidden = !x.d; $('dotWheel').hidden = !x.w; $('dotMission').hidden = !x.m;
     $('evCoins').innerHTML = '' + icoImg('coin', 24) + ' ' + fmt(save.coins);
-    const hd = evEl.querySelector('.rtop h2'); if (hd) hd.textContent = evEl.classList.contains('pop') ? ({ daily: '출석 보상', wheel: '행운 룰렛', mission: '7일 이벤트' }[evTab] || '이벤트') : '이벤트';
+    const hd = evEl.querySelector('.rtop h2'); if (hd) hd.textContent = evEl.classList.contains('pop') ? ({ daily: '출석 보상', wheel: '행운 룰렛', mission: '이벤트' }[evTab] || '이벤트') : '이벤트';
     evEl.querySelectorAll('.tab').forEach(b => { const on = b.dataset.t === evTab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
     let h = '';
     if (evMsg) h += '<div class="evmsg" role="status"><b>' + evMsg.title + '</b>' + chipHtml(evMsg.r) + '</div>';
@@ -3452,34 +3495,40 @@ svg { display: block; }
   setInterval(() => {
     const el = document.getElementById('wkLeft');
     if (el && !evEl.hidden) { el.textContent = '이번 주 미션 · ' + weekLeftText(); }
+    const e7 = document.getElementById('e7Left'); if (e7 && !evEl.hidden) e7.textContent = e7LeftText();
   }, 1000);
+  let evDay = null;
+  function e7LeftText() {
+    const n = new Date(), nm = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1);
+    const s = Math.max(0, Math.floor((nm - n) / 1000));
+    return pad2(Math.floor(s / 3600)) + ':' + pad2(Math.floor(s % 3600 / 60)) + ':' + pad2(s % 60);
+  }
   function e7Html() {
-    const st = e7State(), e = EV.e;
-    let h = '<div class="evhead"><small>7일 이벤트 · 하루에 한 번 오늘의 미션을 채우고 보상을 받아요</small></div><div class="dgrid">';
-    E7.forEach((d, i) => {
-      const done = i < e.d, today = !st.finished && !st.done && i === st.idx;
-      h += '<div class="dday' + (i === 6 ? ' big' : '') + (done ? ' done' : '') + (today ? ' today' : '') + '"><span class="dn">' + (i + 1) + '일차</span><span class="di">' + ic(d.i, 30) + '</span><span class="dt">' + d.t + '</span></div>';
-    });
-    h += '</div>';
-    if (st.finished) h += '<div class="mrow claimed" style="margin-top:10px"><div class="tx"><b>7일 이벤트 완료!</b><span>내일부터 새로 시작해요</span></div></div>';
-    else {
-      const m = E7[st.idx], cur = Math.min(e.tc, m.n);
-      h += '<div class="mrow' + (st.done ? ' claimed' : '') + '" style="margin-top:10px"><div class="tx"><b>' + (st.done ? '내일의 미션 · ' : '오늘의 미션 · ') + (st.idx + 1) + '일차</b>' +
-        (st.done ? '<span>단계 ' + m.n + '번 클리어하기</span>' : '<div class="mbar"><i style="width:' + (cur / m.n * 100) + '%"></i></div><span class="mw"><em>오늘 단계 ' + cur + '/' + m.n + '번 클리어</em></span>') +
-        '</div><button class="btn primary" type="button" data-ev="e7"' + (st.ok ? '' : ' disabled') + '>' + (st.done ? '내일 열려요' : st.ok ? '받기' : '진행 중') + '</button></div>';
+    const idx = e7Norm();
+    const sel = evDay == null ? idx : Math.max(0, Math.min(6, evDay));
+    let h = '<div class="e7h"><b class="e7t">일일 과제</b><small>오늘 남은 시간 <span id="e7Left">' + e7LeftText() + '</span></small></div>' +
+      '<p class="e7note">' + (EV.e.round || 1) + '번째 7일 과제예요. 7일차가 끝나면 새 과제로 다시 1일차부터 시작해요.</p><div class="e7days">';
+    for (let i = 0; i < 7; i++) {
+      const all = e7Got(i) >= 5 && EV.e.bx[i];
+      h += '<button type="button" class="e7d' + (i === idx ? ' now' : i < idx ? ' past' : ' lock') + (i === sel ? ' sel' : '') + '" data-eday="' + i + '">' + (i + 1) + '<br>일차' +
+        (e7DayReady(i) ? '<i class="e7bang">!</i>' : '') + (all ? '<i class="e7ok">✔</i>' : '') + '</button>';
     }
-    return h;
-  }
-  function missionHtml() {
-    evWeek();
-    let h = e7Html() + '<div class="evhead" style="margin-top:16px"><small id="wkLeft">이번 주 미션 · ' + weekLeftText() + '</small></div>';
-    MISSIONS.forEach(m => {
-      const cur = Math.min(EV[m.k], m.n), ok = EV[m.k] >= m.n, got = !!EV.claimed[m.id];
-      h += '<div class="mrow' + (got ? ' claimed' : '') + '"><div class="tx"><b>' + m.t + '</b><div class="mbar"><i style="width:' + (cur / m.n * 100) + '%"></i></div><span class="mw"><em>' + cur + '/' + m.n + '</em>' + chips(m.r).map(c => '<i>' + c + '</i>').join('') + '</span></div>' +
-        '<button class="btn primary" type="button" data-ev="mission" data-id="' + m.id + '"' + (ok && !got ? '' : ' disabled') + '>' + (got ? '받음' : ok ? '받기' : '진행 중') + '</button></div>';
+    h += '</div>';
+    const locked = sel > idx;
+    e7Tasks(sel).forEach(t => {
+      const got = !!EV.e.cl[e7Key(sel, t.id)], ready = !locked && t.cur >= t.n && !got, cur = Math.min(t.cur, t.n);
+      h += '<div class="e7row' + (ready ? ' ready' : '') + (got ? ' got' : '') + '"><span class="e7i">' + ic(t.i, 34) + '</span><div class="e7x"><b>' + t.t + '</b>' +
+        '<div class="mbar e7bar"><i style="width:' + (cur / t.n * 100) + '%"></i><em>' + cur + '/' + t.n + '</em></div></div>' +
+        '<div class="e7r">' + chips(t.r).map(c => '<i>' + c + '</i>').join('') +
+        '<button class="btn" type="button" data-ev="e7t" data-d="' + sel + '" data-id="' + t.id + '"' + (ready ? '' : ' disabled') + '>' + (got ? '받음' : ready ? '받기' : locked ? '잠김' : '진행 중') + '</button></div></div>';
     });
+    const gotN = e7Got(sel), opened = !!EV.e.bx[sel], br = !locked && e7BoxReady(sel);
+    h += '<div class="e7box' + (br ? ' ready' : '') + '"><div class="e7st">' + [0, 1, 2].map(i => '<span class="' + (i < gotN ? 'on' : '') + '">★</span>').join('') + '</div>' +
+      '<div class="e7bx"><small>' + chips(E7_BOX[sel]).join(' · ') + '</small><button class="btn" type="button" data-ev="e7b" data-d="' + sel + '"' + (br ? '' : ' disabled') + '>' + (opened ? '열었어요' : br ? '선물 열기' : '선물 상자') + '</button></div></div>' +
+      '<p class="e7foot">과제 보상을 3개 받으면 선물 상자를 열 수 있어요.</p>';
     return h;
   }
+  function missionHtml() { return e7Html(); }
   function openEvent(tab, pop) {
     if (busy && !ended) return;
     clearHint(); hammerMode = false; field.classList.remove('hammering'); tip.hidden = true;
@@ -3487,7 +3536,7 @@ svg { display: block; }
     const x = evDots();
     evTab = tab || (x.d ? 'daily' : x.w ? 'wheel' : x.m ? 'mission' : evTab);
     evEl.classList.toggle('pop', !!pop);
-    evMsg = null; evRender(); evEl.hidden = false; evEl.scrollTop = 0;
+    evDay = null; evMsg = null; evRender(); evEl.hidden = false; evEl.scrollTop = 0;
     const card = evEl.querySelector('.evcard'); if (card) card.scrollTop = 0;
   }
   function closeEvent() { evEl.hidden = true; evEl.classList.remove('pop'); updateHud(false); if (lvEl.hidden && !ended) scheduleHint(); }
@@ -3541,13 +3590,18 @@ svg { display: block; }
     if (e.target === evEl && evEl.classList.contains('pop') && !spinning) { S('click'); closeEvent(); return; }
     const t = e.target.closest('.tab');
     if (t) { if (spinning) return; S('click'); evTab = t.dataset.t; evMsg = null; evRender(); return; }
+    const dp = e.target.closest('[data-eday]'); if (dp) { S('click'); evDay = +dp.dataset.eday; evMsg = null; evRender(); return; }
     const b = e.target.closest('[data-ev]'); if (!b || b.disabled) return;
     const a = b.dataset.ev;
     if (a === 'claim') claimDaily();
     else if (a === 'spin') { S('click'); doSpin(); }
-    else if (a === 'e7') {
-      const st = e7State();
-      if (st.ok) { const d = E7[st.idx]; EV.e.cd = dayKey(); EV.e.d = st.idx + 1; give(d.r); persist(); S('goal'); S('coin'); evMsg = { title: (st.idx + 1) + '일차 이벤트 보상을 받았어요!', r: d.r }; evRender(); }
+    else if (a === 'e7t') {
+      const di = +b.dataset.d, t = e7Tasks(di).find(x => x.id === b.dataset.id);
+      if (t && di <= e7Norm() && e7TaskReady(di, t)) { EV.e.cl[e7Key(di, t.id)] = 1; give(t.r); S('goal'); S('coin'); evMsg = { title: '과제 보상을 받았어요!', r: t.r }; evRender(); }
+    }
+    else if (a === 'e7b') {
+      const di = +b.dataset.d;
+      if (di <= e7Norm() && e7BoxReady(di)) { EV.e.bx[di] = 1; give(E7_BOX[di]); S('goal'); S('coin'); evMsg = { title: '선물 상자를 열었어요!', r: E7_BOX[di] }; evRender(); }
     }
     else if (a === 'mission') {
       const m = MISSIONS.find(x => x.id === b.dataset.id);
