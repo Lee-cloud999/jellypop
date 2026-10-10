@@ -3270,6 +3270,7 @@ svg { display: block; }
   const weekStart = () => addDays(dayKey(), -((new Date().getDay() + 6) % 7));
   if (!save.ev || typeof save.ev !== 'object') save.ev = {};
   const EV = Object.assign({ last: '', streak: 0, spinDay: '', paidDay: '', paid: 0, tickets: 0, week: '', clears: 0, three: 0, claimed: {} }, save.ev);
+  EV.e = Object.assign({ d: 0, cd: '', tc: 0, td: '' }, (EV.e && typeof EV.e === 'object') ? EV.e : {}); // 7일 이벤트 진행
   save.ev = EV;
   if (typeof save.bonus !== 'number') save.bonus = 0;
   const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -3277,7 +3278,7 @@ svg { display: block; }
     const w = weekStart();
     if (EV.week !== w) { EV.week = w; EV.clears = 0; EV.three = 0; EV.claimed = {}; }
   }
-  function evTrack(lv, stars) { evWeek(); EV.clears++; if (stars === 3) EV.three++; }
+  function evTrack(lv, stars) { evWeek(); e7Norm(); EV.e.tc++; EV.clears++; if (stars === 3) EV.three++; }
   function give(r) {
     if (r.coins) save.coins += r.coins;
     if (r.hammers) save.hammers += r.hammers;
@@ -3359,11 +3360,31 @@ svg { display: block; }
     { id: 'c15', t: '단계 15번 클리어', n: 15, k: 'clears', r: { coins: 300, tickets: 2 } }
   ];
   const mReady = m => EV[m.k] >= m.n && !EV.claimed[m.id];
+  /* 7일 이벤트: 하루에 한 번 오늘의 미션을 채우고 보상을 받아요. 하루를 거르면 그 자리에서 이어서 해요 */
+  const E7 = [
+    { n: 1, r: { coins: 100 }, i: 'COIN', t: '코인 100' },
+    { n: 2, r: { hammers: 1, shuf: 1 }, i: 'hammer', t: '망치 1 · 섞기 1' },
+    { n: 2, r: { tickets: 1 }, i: 'ticket', t: '룰렛권 1개' },
+    { n: 3, r: { coins: 200 }, i: 'COIN', t: '코인 200' },
+    { n: 3, r: { mv: 2 }, i: 'mv', t: '이동권 2개' },
+    { n: 4, r: { stars: 2 }, i: 'star', t: '방 별 2개' },
+    { n: 5, r: { coins: 300, stars: 2, tickets: 2 }, i: 'giftbox', t: '코인 300 · 방 별 2 · 룰렛권 2' }
+  ];
+  function e7Norm() {
+    const t = dayKey(), e = EV.e;
+    if (e.td !== t) { e.td = t; e.tc = 0; }
+    if (e.d >= 7 && e.cd !== t) e.d = 0; // 다 끝낸 다음 날부터 새로 시작
+  }
+  function e7State() {
+    e7Norm();
+    const e = EV.e, t = dayKey(), done = e.cd === t, finished = e.d >= 7, idx = Math.min(e.d, 6);
+    return { idx, done, finished, ok: !done && !finished && e.tc >= E7[idx].n };
+  }
   function evDots() {
     evWeek();
     const d = !dailyState().claimed;
     const sp = spinState(), w = sp.free || EV.tickets > 0;
-    const m = MISSIONS.some(mReady);
+    const m = MISSIONS.some(mReady) || e7State().ok;
     return { d, w, m };
   }
   function evDotSync() {
@@ -3378,7 +3399,7 @@ svg { display: block; }
     const x = evDots();
     $('dotDaily').hidden = !x.d; $('dotWheel').hidden = !x.w; $('dotMission').hidden = !x.m;
     $('evCoins').innerHTML = '' + icoImg('coin', 24) + ' ' + fmt(save.coins);
-    const hd = evEl.querySelector('.rtop h2'); if (hd) hd.textContent = evEl.classList.contains('pop') ? ({ daily: '출석 보상', wheel: '행운 룰렛', mission: '털실 축제 주간' }[evTab] || '이벤트') : '이벤트';
+    const hd = evEl.querySelector('.rtop h2'); if (hd) hd.textContent = evEl.classList.contains('pop') ? ({ daily: '출석 보상', wheel: '행운 룰렛', mission: '7일 이벤트' }[evTab] || '이벤트') : '이벤트';
     evEl.querySelectorAll('.tab').forEach(b => { const on = b.dataset.t === evTab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
     let h = '';
     if (evMsg) h += '<div class="evmsg" role="status"><b>' + evMsg.title + '</b>' + chipHtml(evMsg.r) + '</div>';
@@ -3430,11 +3451,28 @@ svg { display: block; }
   }
   setInterval(() => {
     const el = document.getElementById('wkLeft');
-    if (el && !evEl.hidden) { el.textContent = weekLeftText(); }
+    if (el && !evEl.hidden) { el.textContent = '이번 주 미션 · ' + weekLeftText(); }
   }, 1000);
+  function e7Html() {
+    const st = e7State(), e = EV.e;
+    let h = '<div class="evhead"><small>7일 이벤트 · 하루에 한 번 오늘의 미션을 채우고 보상을 받아요</small></div><div class="dgrid">';
+    E7.forEach((d, i) => {
+      const done = i < e.d, today = !st.finished && !st.done && i === st.idx;
+      h += '<div class="dday' + (i === 6 ? ' big' : '') + (done ? ' done' : '') + (today ? ' today' : '') + '"><span class="dn">' + (i + 1) + '일차</span><span class="di">' + ic(d.i, 30) + '</span><span class="dt">' + d.t + '</span></div>';
+    });
+    h += '</div>';
+    if (st.finished) h += '<div class="mrow claimed" style="margin-top:10px"><div class="tx"><b>7일 이벤트 완료!</b><span>내일부터 새로 시작해요</span></div></div>';
+    else {
+      const m = E7[st.idx], cur = Math.min(e.tc, m.n);
+      h += '<div class="mrow' + (st.done ? ' claimed' : '') + '" style="margin-top:10px"><div class="tx"><b>' + (st.done ? '내일의 미션 · ' : '오늘의 미션 · ') + (st.idx + 1) + '일차</b>' +
+        (st.done ? '<span>단계 ' + m.n + '번 클리어하기</span>' : '<div class="mbar"><i style="width:' + (cur / m.n * 100) + '%"></i></div><span class="mw"><em>오늘 단계 ' + cur + '/' + m.n + '번 클리어</em></span>') +
+        '</div><button class="btn primary" type="button" data-ev="e7"' + (st.ok ? '' : ' disabled') + '>' + (st.done ? '내일 열려요' : st.ok ? '받기' : '진행 중') + '</button></div>';
+    }
+    return h;
+  }
   function missionHtml() {
     evWeek();
-    let h = '<div class="evhead"><small id="wkLeft">' + weekLeftText() + '</small></div>';
+    let h = e7Html() + '<div class="evhead" style="margin-top:16px"><small id="wkLeft">이번 주 미션 · ' + weekLeftText() + '</small></div>';
     MISSIONS.forEach(m => {
       const cur = Math.min(EV[m.k], m.n), ok = EV[m.k] >= m.n, got = !!EV.claimed[m.id];
       h += '<div class="mrow' + (got ? ' claimed' : '') + '"><div class="tx"><b>' + m.t + '</b><div class="mbar"><i style="width:' + (cur / m.n * 100) + '%"></i></div><span class="mw"><em>' + cur + '/' + m.n + '</em>' + chips(m.r).map(c => '<i>' + c + '</i>').join('') + '</span></div>' +
@@ -3507,6 +3545,10 @@ svg { display: block; }
     const a = b.dataset.ev;
     if (a === 'claim') claimDaily();
     else if (a === 'spin') { S('click'); doSpin(); }
+    else if (a === 'e7') {
+      const st = e7State();
+      if (st.ok) { const d = E7[st.idx]; EV.e.cd = dayKey(); EV.e.d = st.idx + 1; give(d.r); persist(); S('goal'); S('coin'); evMsg = { title: (st.idx + 1) + '일차 이벤트 보상을 받았어요!', r: d.r }; evRender(); }
+    }
     else if (a === 'mission') {
       const m = MISSIONS.find(x => x.id === b.dataset.id);
       if (m && mReady(m)) { EV.claimed[m.id] = 1; give(m.r); S('goal'); S('coin'); evMsg = { title: '미션 완료!', r: m.r }; evRender(); }
@@ -3521,6 +3563,11 @@ svg { display: block; }
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !evEl.hidden && !spinning) { closeEvent(); e.stopImmediatePropagation(); } });
   evWeek(); persist(); evDotSync();
+  // 날짜가 바뀌거나 앱으로 돌아왔을 때도 빨간 점을 다시 계산해요
+  setInterval(evDotSync, 30000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) evDotSync(); });
+  window.addEventListener('focus', evDotSync);
+  window.addEventListener('pageshow', evDotSync);
 
   /* ---------- level map: winding yarn path, reward chests, hard-level markers ---------- */
   const CHESTS = {
