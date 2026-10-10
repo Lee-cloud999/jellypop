@@ -801,6 +801,7 @@ svg { display: block; }
 <div class="hshop" id="hshop" hidden><div class="hcard" id="hcard"></div></div>
 <button class="tapsound" id="tapSound" type="button" hidden>🔊 눌러서 소리 켜기</button>
 <div class="app">
+  <div id="testBadge" hidden style="position:fixed;left:6px;bottom:6px;z-index:9999;background:#FF4F6D;color:#fff;font:700 11px/1 sans-serif;padding:4px 8px;border-radius:999px;pointer-events:none;opacity:.9">테스트 모드</div>
   <header class="top">
     <div class="hl">
     <button class="round" id="soundBtn" type="button" aria-label="설정">
@@ -909,6 +910,10 @@ svg { display: block; }
   if (typeof save.mv !== 'number') save.mv = 1;
   if (typeof save.shuf !== 'number') save.shuf = 1;
   if (typeof save.hammers !== 'number') save.hammers = 2;
+  // ★ 테스트 모드: 켜져 있으면 하트가 줄지 않고, 단계 지도에서 모든 단계를 골라 시작할 수 있어요.
+  //   앱으로 올리기 전에 false로 바꾸세요. (false이면 테스트 표시와 관련 동작이 모두 꺼져요)
+  const TEST_MODE = true;
+  { const tb = document.getElementById('testBadge'); if (tb) tb.hidden = !TEST_MODE; }
   const HEART_MAX = 5, HEART_MS = 20 * 60 * 1000, HEART_COST = 50;
   if (typeof save.hearts !== 'number') save.hearts = HEART_MAX;
   if (typeof save.hAt !== 'number') save.hAt = Date.now();
@@ -2342,23 +2347,30 @@ svg { display: block; }
     if (busy || ended || !over.hidden) return;
     busy = true; hideFinger(true); clearHint(); clearSel(); S('make');
     const r0 = t.r, c0 = t.c;
-    const fl = document.createElement('div'); fl.className = 'wingfly';
-    fl.style.transform = 'translate(' + (c0 * cell) + 'px,' + (r0 * cell) + 'px)';
-    fl.appendChild(t.el.firstChild.cloneNode(true)); field.appendChild(fl);
-    const ex = [t];
-    [grid[r0 - 1] && grid[r0 - 1][c0], grid[r0 + 1] && grid[r0 + 1][c0]].forEach(x => { if (x && !isFixed(x) && !x.key) ex.push(x); });
-    FX.ring((c0 + 0.5) * cell, (r0 + 0.5) * cell, '#FFFFFF', cell * 1.8);
-    await resolve(null, ex);
-    let tg = wingTarget();
+    const vert = x => [grid[x.r - 1] && grid[x.r - 1][x.c], grid[x.r + 1] && grid[x.r + 1][x.c]].filter(y => y && !isFixed(y) && !y.key);
+    const tg = wingTarget();
+    const ex = new Set([t]);
     if (tg) {
+      // 목표 젤리로 날아가서, 내려앉은 자리를 기준으로 위아래가 함께 터져요
+      const fl = document.createElement('div'); fl.className = 'wingfly';
+      fl.style.transform = 'translate(' + (c0 * cell) + 'px,' + (r0 * cell) + 'px)';
+      fl.appendChild(t.el.firstChild.cloneNode(true)); field.appendChild(fl);
+      t.el.style.opacity = '0';
       void fl.offsetWidth;
       fl.style.transform = 'translate(' + (tg.c * cell) + 'px,' + (tg.r * cell) + 'px)';
       S('sweep');
       await sleep(520);
       fl.remove();
-      FX.ring((tg.c + 0.5) * cell, (tg.r + 0.5) * cell, '#FFFFFF', cell * 1.6);
-      if (grid[tg.r] && grid[tg.r][tg.c] === tg) await resolve(null, [tg]);
-    } else fl.remove();
+      FX.ring((tg.c + 0.5) * cell, (tg.r + 0.5) * cell, '#FFFFFF', cell * 1.8);
+      if (grid[tg.r] && grid[tg.r][tg.c] === tg) { ex.add(tg); vert(tg).forEach(x => ex.add(x)); }
+      else vert(t).forEach(x => ex.add(x));
+    } else {
+      // 갈 곳이 없으면 제자리에서 위아래로 터져요
+      FX.ring((c0 + 0.5) * cell, (r0 + 0.5) * cell, '#FFFFFF', cell * 1.8);
+      vert(t).forEach(x => ex.add(x));
+    }
+    await resolve(null, [...ex]);
+    t.el.style.opacity = '';
     endCheck();
   }
 
@@ -2520,14 +2532,14 @@ svg { display: block; }
 
   let loseSpent = false;
   function loseLevel(msg, noCont) {
-    ended = true; busy = true; spendHeart(); loseSpent = true; // 졌을 때 하트 1개
+    ended = true; busy = true; spendHeart(); loseSpent = !TEST_MODE; // 졌을 때 하트 1개
     S('lose');
     clearHint();
     updateHud(false);
     const can = save.coins >= CONT.cost;
     showOver(
       '<h3>아쉬워요</h3><p>' + (msg || '이동 횟수를 다 썼어요.') + '</p>' +
-      '<p style="margin:0;font-size:14px;opacity:.85">하트 1개를 잃었어요 · 남은 하트 ' + save.hearts + '개</p>' +
+      '<p style="margin:0;font-size:14px;opacity:.85">' + (TEST_MODE ? '테스트 모드 · 하트가 줄지 않아요' : '하트 1개를 잃었어요 · 남은 하트 ' + save.hearts + '개') + '</p>' +
       '<div class="coinline" style="font-size:20px">' + icoImg('coin', 22) + ' 보유 ' + fmt(save.coins) + '</div>' +
       (noCont ? '' : '<div class="row"><button class="btn primary wide" type="button" data-act="more"' + (can ? '' : ' disabled') + ' style="min-height:56px;font-size:20px;justify-content:center">이어하기 · 이동 +' + CONT.moves + ' &nbsp;' + icoImg('coin', 20) + ' ' + CONT.cost + '</button></div>') +
       (noCont || can ? '' : '<p style="margin:0;font-size:13px">코인이 부족해요. 상점에서 코인을 채울 수 있어요.</p>') +
@@ -2686,7 +2698,7 @@ svg { display: block; }
   document.addEventListener('pointerdown', keepAwake);
   keepAwake();
   function spendHeart() {
-    if (save.hearts <= 0) return;
+    if (TEST_MODE || save.hearts <= 0) return;
     if (!save.heartTip) pendingHeartTip = true;
     if (save.hearts >= HEART_MAX) save.hAt = Date.now();
     save.hearts--; persist(); renderHearts();
@@ -3633,7 +3645,7 @@ svg { display: block; }
     if (navBlocked()) return;
     S('click');
     if (ended) { openMap(); return; }
-    openConfirm({ title: '게임을 그만두시겠어요?', text: '지금 나가면 하트가 1개 줄어들고, 하던 게임은 저장되지 않아요.', yes: '계속', no: '취소', onYes: () => { if (!ended) { spendHeart(); loseSpent = false; } openMap(); } });
+    openConfirm({ title: '게임을 그만두시겠어요?', text: TEST_MODE ? '테스트 모드라 하트는 줄지 않아요. 하던 게임은 저장되지 않아요.' : '지금 나가면 하트가 1개 줄어들고, 하던 게임은 저장되지 않아요.', yes: '계속', no: '취소', onYes: () => { if (!ended) { spendHeart(); loseSpent = false; } openMap(); } });
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !evEl.hidden && !spinning) { closeEvent(); e.stopImmediatePropagation(); } });
   evWeek(); persist(); evDotSync();
@@ -3732,7 +3744,7 @@ svg { display: block; }
     items.forEach(it => {
       const st = 'left:' + it.x.toFixed(1) + 'px;top:' + it.y.toFixed(1) + 'px';
       if (it.t === 'lv') {
-        const n = it.n, lock = n > save.unlocked, cur = n === Math.min(MAX_LEVEL, save.unlocked), tier = tierOf(n), done = !!save.best[n], m = MAPIMG['n' + tier];
+        const n = it.n, lock = n > (TEST_MODE ? MAX_LEVEL : save.unlocked), cur = n === Math.min(MAX_LEVEL, save.unlocked), tier = tierOf(n), done = !!save.best[n], m = MAPIMG['n' + tier];
         if (cur) curIt = Object.assign({ hh: m.dh }, it);
         h += '<button class="mnode t' + tier + (lock ? ' lock' : '') + (cur ? ' cur' : done ? ' done' : '') + '" type="button" style="' + st + ';width:' + m.dw + 'px;height:' + m.dh + 'px" aria-label="' + n + '단계 ' + TIER_NAME[tier] + (giftAt[n] ? ' · 새 가구 ' + giftAt[n] : '') + (lock ? ' (잠김)' : '') + '"' + (lock ? ' disabled' : ' data-pick="' + n + '"') + '>' +
           '<img class="mimg" alt="" draggable="false" src="' + m.u + '"><span class="mnum" style="top:' + NUMY[tier] + '%">' + n + '</span>' +
