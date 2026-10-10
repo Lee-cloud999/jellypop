@@ -2871,7 +2871,7 @@ svg { display: block; }
     async function upload() {
       if (!prov || !loggedIn() || !synced) return;
       clearTimeout(upT); upT = 0;
-      try { const cur = await prov.load(save.acct.uid); if (cur && cur.ts > (save.cloudTs || 0) && cur.data !== payload()) { synced = false; reconcile(); return; } } catch (e) { return; } // 다른 기기에서 먼저 바뀌었으면 덮어쓰지 않고 선택하게 해요
+      try { const cur = await prov.load(save.acct.uid); if (cur && cur.ts > (save.cloudTs || 0) && cur.data !== payload()) { synced = false; reconcile(); return; } } catch (e) { return; } // 다른 기기에서 먼저 바뀌었으면 덮어쓰지 않고 계정 진행으로 맞춰요
       try { const ts = Date.now(); await prov.store(save.acct.uid, { data: payload(), ts, v: 1 }); save.cloudTs = ts; try { localStorage.setItem(STORE, JSON.stringify(save)); } catch (e) { /* ignore */ } } catch (e) { /* 오프라인이면 다음에 */ }
     }
     function queue() { if (!prov || !loggedIn() || !synced) return; clearTimeout(upT); upT = setTimeout(upload, 4000); }
@@ -2892,13 +2892,7 @@ svg { display: block; }
       if (cloud.data === payload()) { synced = true; return; }
       if (!meaningful(save)) { applyCloud(cloud); return; }
       if (save.cloudTs && cloud.ts === save.cloudTs) { synced = true; await upload(); return; } // 이 기기가 최신
-      openConfirm({
-        title: '진행 상황이 달라요',
-        text: '이 기기: ' + sum(save) + '\n계정: ' + sum(cd) + '\n\n어느 쪽으로 이어서 할까요?\n(선택하지 않은 쪽은 덮어써져요)',
-        yes: '계정 진행', no: '이 기기 진행',
-        onYes: () => applyCloud(cloud),
-        onNo: () => { synced = true; upload().then(() => showToast('이 기기 진행으로 저장했어요')); }
-      });
+      applyCloud(cloud); // 로그인하면 계정 진행이 기준이에요 (이 기기 기록은 계정 기록으로 바뀌어요)
     }
     function onAuth(u) {
       if (u) { const first = !loggedIn() || save.acct.uid !== u.uid; save.acct = { uid: u.uid, name: u.name }; if (first) synced = false; persist(); ui(); reconcile(); }
