@@ -3250,7 +3250,6 @@ svg { display: block; }
     if (!t) return;
     clearHint();
     if (hammerMode) { useHammer(t); return; }
-    if (t.special === 'wing') { useWing(t); return; }
     down = { t, x: e.clientX, y: e.clientY, done: false };
     try { field.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
   });
@@ -3272,6 +3271,7 @@ svg { display: block; }
     if (d.done || busy) return;
     const t = d.t;
     if (isFixed(t)) { nudge(t, 0, 0); return; }
+    if (t.special === 'wing' && !(selected && selected !== t && adjacent(selected, t))) { clearSel(); useWing(t); return; } // 날개는 제자리에서 눌러도 쓰이고, 끌거나 옆 젤리를 이어 눌러 바꾸면 이동해요
     if ((t.special === 'row' || t.special === 'col') && !(selected && selected !== t && adjacent(selected, t))) { useLine(t); return; } // 가로·세로 줄 젤리는 제자리에서 눌러도 터져요
     if (!selected) { selected = t; t.el.classList.add('sel'); S('tap'); }
     else if (selected === t) clearSel();
