@@ -2151,7 +2151,7 @@ svg { display: block; }
   }
   // 줄무늬(10)·무지개(16)·날개(WING_FROM) 만드는 법: 처음엔 설명창 → 손가락 시연, 이후엔 시연만
   const LESSONS = {
-    stripe: { flag: 'tutStripe', title: '줄무늬 젤리 만들기', img: () => IMG[SPECIAL_IMG.row], body: '같은 색 <b>4개</b>를 한 줄로 맞추면<br><b>줄무늬 젤리</b>가 생겨요!<br>줄무늬는 옆 젤리와 바꾸면<br>한 줄이 쓱 터져요.', demo: () => lessonDemo(4) },
+    stripe: { flag: 'tutStripe', title: '줄무늬 젤리 만들기', img: () => IMG[SPECIAL_IMG.row], body: '같은 색 <b>4개</b>를 한 줄로 맞추면<br><b>줄무늬 젤리</b>가 생겨요!<br>줄무늬는 옆 젤리와 바꾸면<br>한 줄이 쓱 터져요.', demo: () => { if (level === 4 && !save.tutStripeDone) stripeTut = 1; lessonDemo(4); } },
     rainbow: { flag: 'tutRainbow', title: '무지개 젤리 만들기', img: () => RAINBOW_IMG || IMG[8], body: '같은 색 <b>5개</b>를 한 줄로 맞추면<br><b>무지개 젤리</b>가 생겨요!<br>무지개는 아무 젤리와 바꾸면<br>그 색이 모두 사라져요.', demo: () => lessonDemo(5) },
     wing: { flag: 'tutWing', title: '날개 젤리 만들기', img: () => WING_IMG, body: '같은 색 <b>4개를 2×2</b>로 모으면<br><b>날개 젤리</b>가 생겨요!<br>옆 젤리와 바꾸면 그 자리의 위아래가 터지고<br>목표 젤리에게 날아가 거기도 터뜨려요.<br>날개 둘을 바꾸면 효과가 두 배!', demo: () => wingLesson() }
   };
@@ -2284,8 +2284,75 @@ svg { display: block; }
     }
     return cands.length ? cands[rnd(cands.length)] : null;
   }
+  // ---- 4단계 줄무늬 튜토리얼: 만들기 → 눌러 터뜨리기 → 가로로 또 만들기 → 밀어서 터뜨리기 ----
+  let stripeTut = 0;
+  const stripeOf = () => grid.flat().find(x => x && (x.special === 'row' || x.special === 'col'));
+  function hRunLen(r, c) {
+    const t = grid[r][c]; if (!t || t.special || t.crate || t.key) return 0;
+    let h = 1, i;
+    for (i = c - 1; i >= 0 && same(t, grid[r][i]); i--) h++;
+    for (i = c + 1; i < C && same(t, grid[r][i]); i++) h++;
+    return h;
+  }
+  function hLineDemoFind() {
+    const cands = [];
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) for (const [dr, dc] of [[0, 1], [1, 0]]) {
+      const r2 = r + dr, c2 = c + dc;
+      if (r2 >= R || c2 >= C) continue;
+      const a = grid[r][c], b = grid[r2][c2];
+      if (!a || !b || isFixed(a) || isFixed(b) || a.special || b.special || a.key || b.key) continue;
+      swapGrid(r, c, r2, c2);
+      const ok = hRunLen(r, c) >= 4 || hRunLen(r2, c2) >= 4;
+      swapGrid(r, c, r2, c2);
+      if (ok) cands.push([r, c, r2, c2]);
+    }
+    return cands.length ? cands[rnd(cands.length)] : null;
+  }
+  // 가로 4개 시연용 한 수가 없으면, 한 줄을 직접 만들어 줘요 (같은 색 3개 + 비어 있는 한 칸, 아래 칸에 같은 색)
+  function forceHLine() {
+    const ok = x => x && !isFixed(x) && !x.special && !x.key;
+    for (let tries = 0; tries < 30; tries++) {
+      const r = rnd(R - 1), c0 = rnd(Math.max(1, C - 3));
+      const cells = [0, 1, 2, 3].map(i => grid[r] && grid[r][c0 + i]);
+      const below = grid[r + 1] && grid[r + 1][c0 + 2];
+      if (!cells.every(ok) || !ok(below)) continue;
+      const ty = grid[r][c0].type, other = (ty + 1) % 6;
+      cells[1].type = ty; cells[3].type = ty; cells[2].type = other; below.type = ty;
+      [cells[1], cells[3], cells[2], below].forEach(render);
+      return [r, c0 + 2, r + 1, c0 + 2];
+    }
+    return null;
+  }
+  function stripeTutAfter() {
+    const st = stripeOf();
+    const done = () => { stripeTut = 0; save.tutStripeDone = 1; persist(); };
+    if (stripeTut === 1) {
+      if (st) { stripeTut = 2; fingerDemo([st.r, st.c, st.r, st.c], '<b>줄무늬 젤리</b>가 생겼어요!<br>그냥 <b>톡 눌러</b> 보세요.<br><small>한 줄이 쓱 터져요</small>', null, 6000); }
+      else lessonDemo(4);
+    } else if (stripeTut === 2) {
+      if (st) fingerDemo([st.r, st.c, st.r, st.c], '줄무늬 젤리를 <b>톡 눌러</b> 보세요!<br><small>한 줄이 쓱 터져요</small>', null, 6000);
+      else {
+        stripeTut = 3;
+        const h = hLineDemoFind() || forceHLine();
+        if (h) fingerDemo(h, '이번엔 <b>가로로 4개</b>를 맞춰 보세요!<br><small>가로 줄무늬가 생겨요</small>', null, 6500); else done();
+      }
+    } else if (stripeTut === 3) {
+      if (st) {
+        stripeTut = 4;
+        const nb = [[0, 1], [1, 0], [0, -1], [-1, 0]].map(([dr, dc]) => grid[st.r + dr] && grid[st.r + dr][st.c + dc]).find(x => x && !isFixed(x) && !x.key);
+        if (nb) fingerDemo([st.r, st.c, nb.r, nb.c], '줄무늬 젤리를 <b>옆으로 밀어서</b> 바꿔 보세요!<br><small>줄무늬가 터져서 한 줄이 사라져요</small>', null, 6500); else done();
+      } else {
+        const h = hLineDemoFind() || forceHLine();
+        if (h) fingerDemo(h, '가로로 <b>4개</b>를 맞춰 보세요!', null, 6500); else done();
+      }
+    } else if (stripeTut === 4) {
+      if (st) { const nb = [[0, 1], [1, 0], [0, -1], [-1, 0]].map(([dr, dc]) => grid[st.r + dr] && grid[st.r + dr][st.c + dc]).find(x => x && !isFixed(x) && !x.key); if (nb) { fingerDemo([st.r, st.c, nb.r, nb.c], '줄무늬 젤리를 <b>옆으로 밀어서</b> 바꿔 보세요!', null, 6500); return; } }
+      done();
+    }
+  }
   function ctxAfterMove() {
     if (ended || busy || !over.hidden || !cover.hidden || !lvEl.hidden || !cfg) return;
+    if (stripeTut) { ctxPending = null; hideFinger(true); stripeTutAfter(); return; }
     if (ctxPending) { const k = ctxPending; ctxPending = null; if (!fingerOn) { specialTip(k); return; } }
     if (!fingerOn) {
       const cb = comboFind();
