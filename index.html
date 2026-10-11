@@ -3871,7 +3871,7 @@ svg { display: block; }
     if (typeof save.chSeen !== 'number') { save.chSeen = ch; persist(); return; }   // 이미 진행 중이던 사람은 연출 없이 기록만 해요
     if (ch <= save.chSeen || !mapLay) return;
     const from = save.chSeen; save.chSeen = ch; persist();
-    playYarn(from, cur);
+    playYarn(ch - 1, cur);                                                              // 바로 앞 장의 포털에서 출발해요
   }
   function playYarn(from, cur) {                                                        // from장 포털 → cur단계로 털실과 별 캐릭터가 함께 날아가요
     const pt = mapLay && mapLay.chs.find(c => c.i === from - 1), it = mapLay && mapLay.items.find(x => x.t === 'lv' && x.n === cur);
