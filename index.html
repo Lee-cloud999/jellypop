@@ -3059,7 +3059,7 @@ svg { display: block; }
     else if (act === 'shufok') { hideOver(); bShuffle.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'mvok') { hideOver(); bMoves.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'hamok') { hideOver(); bHammer.classList.add('tutglow'); if (!ended) scheduleHint(); }
-    else if (act === 'heartok') { hideOver(); if (!ended) { scheduleHint(); if (level === 3) setTimeout(() => startBombTut(0), 500); else if (level === 10 || level === 16 || level === WING_FROM) setTimeout(() => startLesson(level === 10 ? 'stripe' : level === 16 ? 'rainbow' : 'wing', 0), 500); } }
+    else if (act === 'heartok') { hideOver(); if (!ended) { scheduleHint(); if (level === 3) setTimeout(() => startBombTut(0), 500); else if (level === 4 || level === 16 || level === WING_FROM) setTimeout(() => startLesson(level === 4 ? 'stripe' : level === 16 ? 'rainbow' : 'wing', 0), 500); } }
     else if (act === 'lessonok') { hideOver(); const L = LESSONS[curLesson]; if (!ended) { scheduleHint(); if (L) setTimeout(L.demo, 400); } }
     else if (act === 'bombok') { hideOver(); if (!ended) { scheduleHint(); setTimeout(bombDemo, 400); } }
     else if (act === 'iceok') { save.seenIce = 1; persist(); hideOver(); if (!ended) { scheduleHint(); setTimeout(() => gimmickDemo('ice'), 400); } }
@@ -3196,7 +3196,7 @@ svg { display: block; }
     newBoard();
     if (level === 3) for (let t = 0; t < 60 && !bombDemoFind(); t++) newBoard(); // 시연할 T자 한 수가 있는 판으로
     if (level === 1) for (let t = 0; t < 40 && !(hintDir('v') && hintDir('h')); t++) newBoard(); // 시연할 세로·가로 한 수가 모두 있는 판으로
-    if (level === 10) for (let t = 0; t < 60 && !lineDemoFind(4); t++) newBoard(); // 줄무늬 시연용: 4개 한 줄이 되는 한 수가 있는 판으로
+    if (level === 4) for (let t = 0; t < 60 && !lineDemoFind(4); t++) newBoard(); // 줄무늬 시연용: 4개 한 줄이 되는 한 수가 있는 판으로
     if (level === WING_FROM) for (let t = 0; t < 80 && !wingDemoFind(); t++) newBoard();
     if (level === 16) for (let t = 0; t < 80 && !lineDemoFind(5); t++) newBoard(); // 무지개 시연용: 5개 한 줄
     goals.forEach(g => { if (g.k === 'i') g.n = grid.flat().filter(t => t && t.frozen).length; if (g.k === 'x') g.n = grid.flat().filter(t => t && t.crate && !t.pin).length; if (g.k === 'y') g.n = grid.flat().filter(t => t && t.yarn).length; if (g.k === 'k') g.n = grid.flat().filter(t => t && t.key).length; if (g.k === 'g') g.n = gooCount(); });
@@ -3211,12 +3211,11 @@ svg { display: block; }
         '<div class="row"><button class="btn primary" type="button" data-act="heartok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
     } else if (level === 3) {
       setTimeout(() => startBombTut(0), 700);
-    } else if (level === 10 || level === 16 || level === WING_FROM) {
-      setTimeout(() => startLesson(level === 10 ? 'stripe' : level === 16 ? 'rainbow' : 'wing', 0), 700);
+    } else if (level === 4 || level === 16 || level === WING_FROM) {
+      setTimeout(() => startLesson(level === 4 ? 'stripe' : level === 16 ? 'rainbow' : 'wing', 0), 700);
     } else if (cover.hidden && lvEl.hidden && over.hidden) {
       if (level === 1) setTimeout(() => showFinger('v'), 800);
       else if (level === 3) setTimeout(bombDemo, 900);
-      else if (level === 10) setTimeout(() => lessonDemo(4), 1000);
       else if (level === 16) setTimeout(() => lessonDemo(5), 1000);
     }
   }
