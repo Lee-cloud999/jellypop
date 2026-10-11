@@ -2143,6 +2143,12 @@ svg { display: block; }
     const h = bombDemoFind(); if (!h) return;
     fingerDemo(h, '가로 3개 + 세로 3개를 <b>T자</b>로 맞추면<br><b>폭탄 젤리</b>가 생겨요! 이렇게 바꿔 보세요', null, 3200);
   }
+  function startBombTut(n) {
+    n = n || 0;
+    if (level !== 3 || ended) return;
+    if (!cover.hidden || !lvEl.hidden || !over.hidden || busy) { if (n < 25) setTimeout(() => startBombTut(n + 1), 600); return; } // 지도·다른 창이 닫힐 때까지 기다려요
+    if (!save.bombTut) { save.bombTut = 1; persist(); showBombTutorial(); } else bombDemo();
+  }
   function showBombTutorial() {
     if (level !== 3 || ended) return;
     clearHint();
@@ -3024,7 +3030,7 @@ svg { display: block; }
     else if (act === 'shufok') { hideOver(); bShuffle.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'mvok') { hideOver(); bMoves.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'hamok') { hideOver(); bHammer.classList.add('tutglow'); if (!ended) scheduleHint(); }
-    else if (act === 'heartok') { hideOver(); if (!ended) scheduleHint(); }
+    else if (act === 'heartok') { hideOver(); if (!ended) { scheduleHint(); if (level === 3) setTimeout(() => startBombTut(0), 500); } }
     else if (act === 'bombok') { hideOver(); if (!ended) { scheduleHint(); setTimeout(bombDemo, 400); } }
     else if (act === 'iceok') { save.seenIce = 1; persist(); hideOver(); if (!ended) { scheduleHint(); setTimeout(() => gimmickDemo('ice'), 400); } }
     else if (act === 'heartwait') { delete over.dataset.noheart; hideOver(); openLevels(); }
@@ -3172,6 +3178,8 @@ svg { display: block; }
       showOver('<h3>하트 안내</h3><p>하트는 <b>5개</b>까지 모여요.<br>게임에서 지거나 <b>다시하기</b>를 누르면 1개가 줄어요.<br>잘 클리어하면 줄지 않아요!</p>' +
         '<p>하트는 <b>20분마다 1개</b>씩 다시 채워져요.<br>하트가 없으면 위쪽 <b>+</b> 버튼에서 코인으로 살 수 있어요.</p>' +
         '<div class="row"><button class="btn primary" type="button" data-act="heartok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
+    } else if (level === 3) {
+      setTimeout(() => startBombTut(0), 700);
     } else if (cover.hidden && lvEl.hidden && over.hidden) {
       if (level === 1) setTimeout(() => showFinger('v'), 800);
       else if (level === 3) setTimeout(bombDemo, 900);
