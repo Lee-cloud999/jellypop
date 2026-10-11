@@ -1830,7 +1830,7 @@ svg { display: block; }
   function swapGrid(r1, c1, r2, c2) { const a = grid[r1][c1]; grid[r1][c1] = grid[r2][c2]; grid[r2][c2] = a; }
   function canSwapMatch(r1, c1, r2, c2) {
     if (isFixed(grid[r1][c1]) || isFixed(grid[r2][c2])) return false;
-    if (grid[r1][c1].special === 'wing' || grid[r2][c2].special === 'wing') return false;
+    if (grid[r1][c1].special === 'wing' || grid[r2][c2].special === 'wing') return true;
     if (grid[r1][c1].special || grid[r2][c2].special) return true;
     swapGrid(r1, c1, r2, c2);
     const ok = lineLen(r1, c1) >= 3 || lineLen(r2, c2) >= 3 || inSquare(r1, c1) || inSquare(r2, c2);
@@ -1991,7 +1991,7 @@ svg { display: block; }
       S('pop', chain, set.size);
       if (activated.size) S([...activated].some(t => t.special === 'bomb' || t.special === 'rainbow') ? 'boom' : 'sweep');
       if (survivors.length) S('make');
-      if (survivors.some(s => s.sp === 'wing') && !save.seenWing) { save.seenWing = 1; persist(); setTimeout(() => { if (!ended) plainBubble('<b>날개 젤리</b>가 생겼어요!<br>눌러 보세요. 위아래 젤리가 터지고<br>목표에 도움이 되는 젤리가 하나 더 사라져요', 8000); }, 900); }
+      if (survivors.some(s => s.sp === 'wing') && !save.seenWing) { save.seenWing = 1; persist(); setTimeout(() => { if (!ended) plainBubble('<b>날개 젤리</b>가 생겼어요!<br>옆 젤리와 바꾸거나 눌러 보세요.<br>자리의 위아래가 터지고, 목표에 도움이 되는<br>젤리로 날아가 거기도 터져요', 8000); }, 900); }
       if (survivors.some(s => s.sp === 'row' || s.sp === 'col') && !save.seenStripeTip) ctxPending = 'stripe';
       if (survivors.some(s => s.sp === 'rainbow') && !save.seenRbTip) ctxPending = 'rainbow';
       if (survivors.some(s => s.sp === 'rainbow') && !save.seenRb) { save.seenRb = 1; persist(); }
@@ -2153,7 +2153,7 @@ svg { display: block; }
   const LESSONS = {
     stripe: { flag: 'tutStripe', title: '줄무늬 젤리 만들기', img: () => IMG[SPECIAL_IMG.row], body: '같은 색 <b>4개</b>를 한 줄로 맞추면<br><b>줄무늬 젤리</b>가 생겨요!<br>줄무늬는 옆 젤리와 바꾸면<br>한 줄이 쓱 터져요.', demo: () => lessonDemo(4) },
     rainbow: { flag: 'tutRainbow', title: '무지개 젤리 만들기', img: () => RAINBOW_IMG || IMG[8], body: '같은 색 <b>5개</b>를 한 줄로 맞추면<br><b>무지개 젤리</b>가 생겨요!<br>무지개는 아무 젤리와 바꾸면<br>그 색이 모두 사라져요.', demo: () => lessonDemo(5) },
-    wing: { flag: 'tutWing', title: '날개 젤리 만들기', img: () => WING_IMG, body: '같은 색 <b>4개를 2×2</b>로 모으면<br><b>날개 젤리</b>가 생겨요!<br>눌러 쓰면 열쇠 아래의 젤리를 터뜨려서<br>열쇠를 내리는 데 큰 도움이 돼요.', demo: () => wingLesson() }
+    wing: { flag: 'tutWing', title: '날개 젤리 만들기', img: () => WING_IMG, body: '같은 색 <b>4개를 2×2</b>로 모으면<br><b>날개 젤리</b>가 생겨요!<br>옆 젤리와 바꾸면 그 자리의 위아래가 터지고<br>목표 젤리에게 날아가 거기도 터뜨려요.<br>날개 둘을 바꾸면 효과가 두 배!', demo: () => wingLesson() }
   };
   let curLesson = null;
   function wingLesson() {
@@ -2362,7 +2362,7 @@ svg { display: block; }
   }
 
   async function trySwap(a, b) {
-    if (busy || ended || isFixed(a) || isFixed(b) || a.special === 'wing' || b.special === 'wing') return;
+    if (busy || ended || isFixed(a) || isFixed(b)) return;
     hideFinger();
     busy = true;
     clearHint(); clearSel();
@@ -2381,7 +2381,8 @@ svg { display: block; }
     moves--; madeMoves++;
     updateHud(false);
     const gooBefore = gooCount();
-    await resolve([a, b]);
+    const wingsMoved = [a, b].filter(x => x.special === 'wing');
+    if (wingsMoved.length) await wingBurst(wingsMoved); else await resolve([a, b]);
     if (gooBefore > 0 && gooCount() < gooBefore) gooMiss = 0;
     else if (gooBefore > 0) gooMiss++;
     if (gooBefore > 0 && gooMiss >= 2 && !goalsMet() && moves > 0 && gooCount() < (cfg.gooN || 0) + 3) {
@@ -2394,8 +2395,8 @@ svg { display: block; }
     if (!ended) setTimeout(ctxAfterMove, 350);
   }
 
-  function wingTarget() {
-    const ok = x => x && !isFixed(x) && !x.key && !x.special;
+  function wingTarget(excl) {
+    const ok = x => x && !isFixed(x) && !x.key && !x.special && !(excl && excl.has(x));
     const pick = a => a.length ? a[rnd(a.length)] : null;
     const all = grid.flat();
     const rank = { k: 0, x: 1, i: 1, g: 1, y: 1, c: 2 };
@@ -2412,34 +2413,39 @@ svg { display: block; }
     }
     return pick(all.filter(ok));
   }
+  // 날개 젤리(1~2개): 지금 자리의 위아래가 터지고, 날개는 목표에 도움이 되는 젤리로 날아가 그 위아래도 터져요
+  async function wingBurst(wings) {
+    const vert = x => [grid[x.r - 1] && grid[x.r - 1][x.c], grid[x.r + 1] && grid[x.r + 1][x.c]].filter(y => y && !isFixed(y) && !y.key);
+    const ex = new Set(wings);
+    wings.forEach(w => vert(w).forEach(x => ex.add(x)));
+    const used = new Set(), plans = [];
+    wings.forEach(w => { const tg = wingTarget(used); if (tg) { used.add(tg); plans.push([w, tg]); } });
+    S('sweep');
+    wings.forEach(w => FX.ring((w.c + 0.5) * cell, (w.r + 0.5) * cell, '#FFFFFF', cell * 1.6));
+    const fls = plans.map(([w, tg]) => {
+      const fl = document.createElement('div'); fl.className = 'wingfly';
+      fl.style.transform = 'translate(' + (w.c * cell) + 'px,' + (w.r * cell) + 'px)';
+      fl.appendChild(w.el.firstChild.cloneNode(true)); field.appendChild(fl);
+      w.el.style.opacity = '0';
+      return fl;
+    });
+    if (fls.length) {
+      void fls[0].offsetWidth;
+      fls.forEach((fl, i) => { fl.style.transform = 'translate(' + (plans[i][1].c * cell) + 'px,' + (plans[i][1].r * cell) + 'px)'; });
+      await sleep(520);
+      fls.forEach(fl => fl.remove());
+      plans.forEach(([w, tg]) => {
+        FX.ring((tg.c + 0.5) * cell, (tg.r + 0.5) * cell, '#FFFFFF', cell * 1.8);
+        if (grid[tg.r] && grid[tg.r][tg.c] === tg) { ex.add(tg); vert(tg).forEach(x => ex.add(x)); }
+      });
+    } else await sleep(200);
+    await resolve(null, [...ex]);
+    wings.forEach(w => { w.el.style.opacity = ''; });
+  }
   async function useWing(t) {
     if (busy || ended || !over.hidden) return;
     busy = true; hideFinger(true); clearHint(); clearSel(); S('make');
-    const r0 = t.r, c0 = t.c;
-    const vert = x => [grid[x.r - 1] && grid[x.r - 1][x.c], grid[x.r + 1] && grid[x.r + 1][x.c]].filter(y => y && !isFixed(y) && !y.key);
-    const tg = wingTarget();
-    const ex = new Set([t]);
-    if (tg) {
-      // 목표 젤리로 날아가서, 내려앉은 자리를 기준으로 위아래가 함께 터져요
-      const fl = document.createElement('div'); fl.className = 'wingfly';
-      fl.style.transform = 'translate(' + (c0 * cell) + 'px,' + (r0 * cell) + 'px)';
-      fl.appendChild(t.el.firstChild.cloneNode(true)); field.appendChild(fl);
-      t.el.style.opacity = '0';
-      void fl.offsetWidth;
-      fl.style.transform = 'translate(' + (tg.c * cell) + 'px,' + (tg.r * cell) + 'px)';
-      S('sweep');
-      await sleep(520);
-      fl.remove();
-      FX.ring((tg.c + 0.5) * cell, (tg.r + 0.5) * cell, '#FFFFFF', cell * 1.8);
-      if (grid[tg.r] && grid[tg.r][tg.c] === tg) { ex.add(tg); vert(tg).forEach(x => ex.add(x)); }
-      else vert(t).forEach(x => ex.add(x));
-    } else {
-      // 갈 곳이 없으면 제자리에서 위아래로 터져요
-      FX.ring((c0 + 0.5) * cell, (r0 + 0.5) * cell, '#FFFFFF', cell * 1.8);
-      vert(t).forEach(x => ex.add(x));
-    }
-    await resolve(null, [...ex]);
-    t.el.style.opacity = '';
+    await wingBurst([t]);
     endCheck();
   }
 
