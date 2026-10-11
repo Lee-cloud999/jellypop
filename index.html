@@ -3873,28 +3873,52 @@ svg { display: block; }
     const from = save.chSeen; save.chSeen = ch; persist();
     playYarn(from, cur);
   }
-  function playYarn(from, cur) {                                                        // from장 포털 → cur단계로 털실이 날아가요
+  function playYarn(from, cur) {                                                        // from장 포털 → cur단계로 털실과 별 캐릭터가 함께 날아가요
     const pt = mapLay && mapLay.chs.find(c => c.i === from - 1), it = mapLay && mapLay.items.find(x => x.t === 'lv' && x.n === cur);
     if (!pt || !it || reduceMotion || !mapEl.animate) return;
-    const sx = pt.px, sy = pt.py + pt.ph * 0.5, ex = it.x, ey = it.y - 8, sz = 46;
-    const y = document.createElement('img'); y.className = 'myarn'; y.alt = ''; y.draggable = false;
-    const art = (from % 2) ? MAPART.yarnP : MAPART.yarnV; y.src = art.u;
-    y.style.cssText = 'width:' + sz + 'px;height:' + (sz * art.h / art.w).toFixed(1) + 'px;left:' + (sx - sz / 2).toFixed(1) + 'px;top:' + (sy - sz / 2).toFixed(1) + 'px;opacity:0';
-    mapEl.appendChild(y);
+    const nd = [...mapEl.querySelectorAll('.mnode')].find(q => (q.getAttribute('aria-label') || '').startsWith(cur + '단계'));
+    const hh = nd ? nd.offsetHeight : 60, isCur = cur === Math.min(MAX_LEVEL, save.unlocked), jl = isCur ? mapEl.querySelector('.mjelly') : null;
+    const sx = pt.px, sy = pt.py + pt.ph * 0.5, ex = it.x, ey = it.y;                    // 털실은 단계 동그라미 한가운데로
+    const ysz = 112, ssz = 64, fx = it.x, fy = it.y - hh / 2 - 2 - ssz / 2;               // 별은 동그라미 위(평소 서 있는 자리)로
+    const DUR = 3400;
+    const mk = (cls, src, w, h, cx, cy) => { const e = document.createElement('img'); e.className = cls; e.alt = ''; e.draggable = false; e.src = src; e.style.cssText = 'width:' + w + 'px;height:' + h.toFixed(1) + 'px;left:' + (cx - w / 2).toFixed(1) + 'px;top:' + (cy - h / 2).toFixed(1) + 'px;opacity:0'; mapEl.appendChild(e); return e; };
+    const art = (from % 2) ? MAPART.yarnP : MAPART.yarnV;
+    const y = mk('myarn', art.u, ysz, ysz * art.h / art.w, sx, sy);
+    const st = mk('myarn', IMG[1], ssz, ssz, sx, sy - 64);
+    if (jl) jl.style.opacity = '0';
     const vis = lvEl.clientHeight || 600, base = () => lvEl.scrollTop + mapEl.getBoundingClientRect().top - lvEl.getBoundingClientRect().top;
-    lvEl.scrollTop = Math.max(0, base() + sy - vis * 0.5);                  // 먼저 포털 쪽을 보여 주고
+    lvEl.style.scrollBehavior = 'auto';
+    lvEl.scrollTop = Math.max(0, base() + sy - vis * 0.5);                               // 먼저 포털 쪽을 보여 주고
     setTimeout(() => {
-      lvEl.scrollTo({ top: Math.max(0, base() + ey - vis * 0.5), behavior: 'smooth' });
-      const dx = ex - sx, dy = ey - sy, lift = Math.min(160, Math.abs(dy) * 0.25 + 60);
-      const an = y.animate([
-        { transform: 'translate(0,0) scale(.6) rotate(0deg)', opacity: 0, offset: 0 },
-        { transform: 'translate(' + dx * 0.15 + 'px,' + (dy * 0.15 - lift * 0.6) + 'px) scale(1.15) rotate(120deg)', opacity: 1, offset: 0.15 },
-        { transform: 'translate(' + dx * 0.55 + 'px,' + (dy * 0.55 - lift) + 'px) scale(1.1) rotate(420deg)', opacity: 1, offset: 0.55 },
-        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.9) rotate(720deg)', opacity: 1, offset: 0.92 },
-        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.2) rotate(760deg)', opacity: 0, offset: 1 }
-      ], { duration: 1500, easing: 'ease-in-out', fill: 'forwards' });
-      an.onfinish = () => { y.remove(); const nd = mapEl.querySelector('.mnode.cur') || [...mapEl.querySelectorAll('.mnode')].find(q => (q.getAttribute('aria-label') || '').startsWith(cur + '단계')); if (nd && nd.animate) nd.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 420, easing: 'ease-out' }); S('win'); };
-    }, 650);
+      S('click');
+      const path = (dx, dy, lift, rot, sc0, sc1) => [
+        { transform: 'translate(0,0) scale(' + sc0 + ') rotate(0deg)', opacity: 0, offset: 0 },
+        { transform: 'translate(' + dx * 0.08 + 'px,' + (dy * 0.08 - lift * 0.5) + 'px) scale(' + sc1 + ') rotate(' + rot * 0.1 + 'deg)', opacity: 1, offset: 0.1 },
+        { transform: 'translate(' + dx * 0.5 + 'px,' + (dy * 0.5 - lift) + 'px) scale(' + sc1 + ') rotate(' + rot * 0.55 + 'deg)', opacity: 1, offset: 0.5 },
+        { transform: 'translate(' + dx * 0.92 + 'px,' + (dy * 0.92 - lift * 0.15) + 'px) scale(' + sc1 + ') rotate(' + rot * 0.95 + 'deg)', opacity: 1, offset: 0.88 },
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1) rotate(' + rot + 'deg)', opacity: 1, offset: 1 }
+      ];
+      const lift = Math.min(220, Math.abs(ey - sy) * 0.3 + 90);
+      const ay = y.animate(path(ex - sx, ey - sy, lift, 1080, 0.5, 1.25), { duration: DUR, easing: 'ease-in-out', fill: 'forwards' });
+      const as = st.animate(path(fx - sx, fy - (sy - 64), lift + 20, 0, 0.5, 1.15), { duration: DUR, delay: 140, easing: 'ease-in-out', fill: 'forwards' });
+      const t0 = performance.now();
+      const follow = () => {                                                              // 화면이 털실을 따라가요
+        const r = y.getBoundingClientRect(), lr = lvEl.getBoundingClientRect();
+        lvEl.scrollTop += ((r.top + r.height / 2) - (lr.top + lr.height * 0.5)) * 0.16;
+        if (performance.now() - t0 < DUR + 200) requestAnimationFrame(follow);
+      };
+      requestAnimationFrame(follow);
+      let n = 0; const tw = setInterval(() => { if (++n > 5) clearInterval(tw); }, 400);
+      ay.onfinish = () => {
+        y.animate([{ transform: 'translate(' + (ex - sx) + 'px,' + (ey - sy) + 'px) scale(1) rotate(1080deg)', opacity: 1 }, { transform: 'translate(' + (ex - sx) + 'px,' + (ey - sy) + 'px) scale(.2) rotate(1140deg)', opacity: 0 }], { duration: 380, fill: 'forwards' }).onfinish = () => y.remove();
+        if (nd && nd.animate) nd.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.2)' }, { transform: 'scale(1)' }], { duration: 480, easing: 'ease-out' });
+        S('win');
+      };
+      as.onfinish = () => {
+        if (jl) { jl.style.transition = 'opacity .25s'; jl.style.opacity = '1'; setTimeout(() => { jl.style.transition = ''; jl.style.opacity = ''; }, 300); }
+        setTimeout(() => { st.remove(); lvEl.style.scrollBehavior = ''; }, jl ? 120 : 900);
+      };
+    }, 900);
   }
   lvEl.addEventListener('click', e => {                                                 // 테스트 모드: 털실 이동 연출만 미리 보기
     if (!e.target.closest('#mapYarnTest')) return;
