@@ -3859,7 +3859,7 @@ svg { display: block; }
     if (curIt) h += '<img class="mjelly" alt="" src="' + IMG[1] + '" style="left:' + curIt.x.toFixed(1) + 'px;top:' + (curIt.y - curIt.hh / 2 - 2).toFixed(1) + 'px">';
 
     mapEl.innerHTML = h;
-    $('mmsg').innerHTML = mapMsg ? '<div class="evmsg mmsg" role="status"><b>' + mapMsg.title + '</b>' + (mapMsg.r ? chipHtml(mapMsg.r) : '') + '</div>' : '';
+    $('mmsg').innerHTML = mapMsg ? '<div class="evmsg mmsg" role="status"><b>' + mapMsg.title + '</b>' + (mapMsg.r ? chipHtml(mapMsg.r) : '') + '</div>' : '' + (testOn() ? '<button id="mapYarnTest" class="btn" type="button" style="display:block;margin:6px auto">🧶 털실 이동 보기 (테스트)</button>' : '');
     $('mlegGift').innerHTML = ic('gift', 15) + ' 새 가구';
     $('mlegChest').innerHTML = '<img class="lgi" alt="" src="' + MAPIMG.c1.u + '"> 보상 상자';
     mapEl.parentNode.querySelectorAll('.mleg i').forEach((el, k) => { const im = document.createElement('img'); im.className = 'lgi'; im.alt = ''; im.src = MAPIMG['n' + k].u; el.replaceWith(im); });
@@ -3871,7 +3871,10 @@ svg { display: block; }
     if (typeof save.chSeen !== 'number') { save.chSeen = ch; persist(); return; }   // 이미 진행 중이던 사람은 연출 없이 기록만 해요
     if (ch <= save.chSeen || !mapLay) return;
     const from = save.chSeen; save.chSeen = ch; persist();
-    const pt = mapLay.chs.find(c => c.i === from - 1), it = mapLay.items.find(x => x.t === 'lv' && x.n === cur);
+    playYarn(from, cur);
+  }
+  function playYarn(from, cur) {                                                        // from장 포털 → cur단계로 털실이 날아가요
+    const pt = mapLay && mapLay.chs.find(c => c.i === from - 1), it = mapLay && mapLay.items.find(x => x.t === 'lv' && x.n === cur);
     if (!pt || !it || reduceMotion || !mapEl.animate) return;
     const sx = pt.px, sy = pt.py + pt.ph * 0.5, ex = it.x, ey = it.y - 8, sz = 46;
     const y = document.createElement('img'); y.className = 'myarn'; y.alt = ''; y.draggable = false;
@@ -3890,9 +3893,15 @@ svg { display: block; }
         { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.9) rotate(720deg)', opacity: 1, offset: 0.92 },
         { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.2) rotate(760deg)', opacity: 0, offset: 1 }
       ], { duration: 1500, easing: 'ease-in-out', fill: 'forwards' });
-      an.onfinish = () => { y.remove(); const nd = mapEl.querySelector('.mnode.cur'); if (nd && nd.animate) nd.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 420, easing: 'ease-out' }); S('win'); };
+      an.onfinish = () => { y.remove(); const nd = mapEl.querySelector('.mnode.cur') || [...mapEl.querySelectorAll('.mnode')].find(q => (q.getAttribute('aria-label') || '').startsWith(cur + '단계')); if (nd && nd.animate) nd.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 420, easing: 'ease-out' }); S('win'); };
     }, 650);
   }
+  lvEl.addEventListener('click', e => {                                                 // 테스트 모드: 털실 이동 연출만 미리 보기
+    if (!e.target.closest('#mapYarnTest')) return;
+    S('click');
+    const cur = Math.min(MAX_LEVEL, save.unlocked), c = Math.min(CHAPS.length - 1, Math.max(1, Math.ceil(cur / 10)));
+    playYarn(c, c * 10 + 1);                                                              // 지금 장의 포털 → 다음 장 첫 단계
+  });
   function openMap() {
     if (busy && !ended) return;
     clearHint(); hammerMode = false; field.classList.remove('hammering'); tip.hidden = true;
