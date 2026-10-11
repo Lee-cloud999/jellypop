@@ -1488,10 +1488,15 @@ svg { display: block; }
   /* 결제 연결 자리: 실제 결제가 연결되면 성공 시 grantPaid(p)를 호출해요 */
   let noteT = 0;
   function payNow(p) { const n = $('shopNote'); if (!n) return; n.textContent = '결제 연결 준비 중이에요'; n.classList.add('show'); clearTimeout(noteT); noteT = setTimeout(() => n.classList.remove('show'), 2200); }
+  const SHOP_CLOSED = true; // 상점을 열 때는 false로
   function openShop() {
     if (busy && !ended) return;
     if (!over.hidden && !over.dataset.shop) prevOver = over.innerHTML;
     const st = over.scrollTop;
+    if (SHOP_CLOSED) { // 상점 준비 중 안내
+      showOver('<h3>상점은 준비 중이에요!</h3><p>더 재미있는 아이템으로 찾아올게요.</p><div class="row"><button class="btn" type="button" data-act="shopclose">닫기</button></div>');
+      over.dataset.shop = '1'; over.scrollTop = 0; return;
+    }
     let html = '<h3>상점</h3><div class="shop"><div class="coinline">' + icoImg('coin', 26) + ' ' + fmt(save.coins) + '</div>';
     SECTIONS.forEach(([key, title]) => {
       html += '<div class="shead">' + title + '</div>';
