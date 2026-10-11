@@ -228,6 +228,8 @@ svg { display: block; }
 .item.tutglow { animation: tutpulse 0.9s ease-in-out infinite; position: relative; z-index: 3; }
 @keyframes tutpulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255, 143, 184, 0)); } 50% { transform: scale(1.14); filter: drop-shadow(0 0 12px #ff8fb8) drop-shadow(0 0 20px #fff); } }
 .itembub { position: fixed; z-index: 45; width: max-content; max-width: min(86vw, 340px); background: var(--paper); color: var(--ink); font-weight: 800; font-size: 14px; line-height: 1.4; text-align: center; padding: 8px 14px; border-radius: 16px; box-shadow: 0 3px 0 var(--shade); outline: 2px dashed var(--stitch); outline-offset: -4px; pointer-events: none; animation: ibIn .3s ease-out; }
+.itembub { pointer-events: auto; }
+.itembub .itemok { margin-top: 6px; border: 0; border-radius: 12px; background: var(--pink, #ff8fb8); color: #fff; font: inherit; font-weight: 800; padding: 6px 18px; min-height: 36px; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.18); }
 .itembub small { font-weight: 700; color: var(--muted); font-size: 12px; }
 .itembub::after { content: ''; position: absolute; left: var(--ax, 50%); bottom: -8px; margin-left: -8px; border: 8px solid transparent; border-bottom: 0; border-top-color: var(--paper); }
 @keyframes ibIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -2185,13 +2187,14 @@ svg { display: block; }
   function itemTip(btn, html, ms) {
     hideItemTip();
     const r = btn.getBoundingClientRect();
-    const b = document.createElement('div'); b.className = 'itembub'; b.innerHTML = html;
+    const b = document.createElement('div'); b.className = 'itembub'; b.innerHTML = html + '<div><button type="button" class="itemok">알겠어요</button></div>';
+    b.querySelector('.itemok').addEventListener('click', e => { e.stopPropagation(); b.remove(); btn.classList.remove('tutglow'); if (!ended) scheduleHint(); });
     document.body.appendChild(b);
     const w = b.offsetWidth;
     b.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
     b.style.top = (r.top - b.offsetHeight - 10) + 'px';
     b.style.setProperty('--ax', (r.left + r.width / 2 - parseFloat(b.style.left)) + 'px');
-    setTimeout(() => { if (b.isConnected) b.remove(); }, ms || 9000);
+    if (ms) setTimeout(() => { if (b.isConnected) b.remove(); }, ms); // 시간을 주지 않으면 '알겠어요'를 누를 때까지 떠 있어요
   }
   function plainBubble(html, ms) {
     hideFinger(true);
