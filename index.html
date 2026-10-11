@@ -243,6 +243,7 @@ svg { display: block; }
   84% { transform: translate(var(--x2), var(--y2)) scale(1); opacity: 1; }
   100% { transform: translate(var(--x2), var(--y2)) scale(1.1); opacity: 0; }
 }
+.fbub .fbtn { margin-top: 6px; border: 0; border-radius: 12px; background: var(--pink, #ff8fb8); color: #fff; font: inherit; font-weight: 800; padding: 6px 20px; min-height: 38px; cursor: pointer; pointer-events: auto; box-shadow: 0 2px 0 rgba(0,0,0,.18); }
 .fbub { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); z-index: 7; pointer-events: none; background: var(--paper); color: var(--ink); font-weight: 800; font-size: 15px; line-height: 1.35; text-align: center; padding: 8px 14px; border-radius: 16px; box-shadow: 0 3px 0 var(--shade); outline: 2px dashed var(--stitch); outline-offset: -4px; width: max-content; max-width: 90%; }
 @media (min-width: 700px) { .fbub { font-size: 20px; } .finger { font-size: 58px; margin: -5px 0 0 -29px; } }
 .tile.rbmark .gem { animation: rbmark 0.55s ease-in-out both; }
@@ -2076,18 +2077,27 @@ svg { display: block; }
     }
     return cand.length ? cand[rnd(cand.length)] : null;
   }
-  function fingerDemo(h, html, next, dur) {
-    hideFinger(true); fingerOn = true; stickyUntil = Date.now() + (dur || 2400);
+  // 말풍선에 버튼을 달아 누를 때까지 보여줘요 (글을 다 읽을 시간을 줘요)
+  function holdBtn(b, label) {
+    const w = document.createElement('div'); const k = document.createElement('button');
+    k.type = 'button'; k.className = 'fbtn'; k.textContent = label || '해볼게요'; w.appendChild(k); b.appendChild(w);
+    ['pointerdown', 'pointerup', 'click'].forEach(ev => k.addEventListener(ev, e => e.stopPropagation()));
+    k.addEventListener('click', () => { hideFinger(true); if (!ended) scheduleHint(); });
+  }
+  function fingerDemo(h, html, next, dur, hold) {
+    hideFinger(true); fingerOn = true; stickyUntil = hold ? 0 : Date.now() + (dur || 2400);
     const [r1, c1, r2, c2] = h;
     const f = document.createElement('div'); f.className = 'finger'; f.textContent = '👆';
-    f.style.animationIterationCount = '1'; f.style.animationFillMode = 'both';
+    f.style.animationIterationCount = hold ? 'infinite' : '1'; f.style.animationFillMode = 'both';
     f.style.setProperty('--x1', (c1 + 0.5) * cell + 'px'); f.style.setProperty('--y1', (r1 + 0.5) * cell + 'px');
     f.style.setProperty('--x2', (c2 + 0.5) * cell + 'px'); f.style.setProperty('--y2', (r2 + 0.5) * cell + 'px');
     const b = document.createElement('div'); b.className = 'fbub'; b.innerHTML = html;
     if (Math.max(r1, r2) < R / 2) { b.style.top = 'auto'; b.style.bottom = '8px'; } // 설명 말풍선은 손가락 반대편에
+    if (hold) holdBtn(b);
     field.appendChild(b); field.appendChild(f);
     grid[r1][c1].el.classList.add('hint'); grid[r2][c2].el.classList.add('hint');
     const tok = ++fingerTok; // 애니메이션 이벤트에 기대지 않고 타이머로 다음으로 넘어가요
+    if (hold) return;
     setTimeout(() => { if (!fingerOn || tok !== fingerTok) return; if (next) next(); else { hideFinger(true); scheduleHint(); } }, dur || 2400);
   }
   function showFinger(dir) {
@@ -2196,10 +2206,11 @@ svg { display: block; }
     b.style.setProperty('--ax', (r.left + r.width / 2 - parseFloat(b.style.left)) + 'px');
     if (ms) setTimeout(() => { if (b.isConnected) b.remove(); }, ms); // 시간을 주지 않으면 '알겠어요'를 누를 때까지 떠 있어요
   }
-  function plainBubble(html, ms) {
+  function plainBubble(html, ms, hold) {
     hideFinger(true);
-    const b = document.createElement('div'); b.className = 'fbub'; b.innerHTML = html; field.appendChild(b);
-    fingerOn = true; const tok = ++fingerTok; stickyUntil = Date.now() + (ms || 7000);
+    const b = document.createElement('div'); b.className = 'fbub'; b.innerHTML = html; if (hold) holdBtn(b); field.appendChild(b);
+    fingerOn = true; const tok = ++fingerTok; stickyUntil = hold ? 0 : Date.now() + (ms || 7000);
+    if (hold) return;
     setTimeout(() => { if (tok === fingerTok) hideFinger(true); }, ms || 7000);
   }
   const GIMMICK_TXT = {
@@ -2214,9 +2225,9 @@ svg { display: block; }
   function gimmickTip(kind) {
     if (ended || busy || !cover.hidden || !lvEl.hidden) return;
     const h = gimmickDemoFind(kind);
-    if (h) fingerDemo(h, GIMMICK_TXT[kind] + '<br>이렇게 바꿔 보세요!', null, 6500);
+    if (h) fingerDemo(h, GIMMICK_TXT[kind] + '<br>이렇게 바꿔 보세요!', null, 6500, true);
     else {
-      plainBubble(GIMMICK_TXT[kind], 7500);
+      plainBubble(GIMMICK_TXT[kind], 7500, true);
       // 바늘꽂이·시한 젤리는 어디 있는지 반짝여서 알려줘요 (말풍선이 사라지면 같이 꺼져요)
       if (kind === 'pin' || kind === 'timer') grid.flat().forEach(t => { if (t && (kind === 'pin' ? t.pin : t.timer)) t.el.classList.add('hint'); });
     }
@@ -2400,7 +2411,7 @@ svg { display: block; }
     if (ended || busy || !cover.hidden || !lvEl.hidden) return;
     const h = gimmickDemoFind(kind); if (!h) return;
     const txt = { ice: '이렇게 바꾸면 옆의 <b>얼음</b>이 깨져요!', crate: '이렇게 바꾸면 옆의 <b>상자</b>가 맞아요!', goo: '이렇게 바꾸면 <b>얼룩</b>이 지워져요!', key: '이렇게 바꾸면 <b>열쇠</b>가 아래로 내려가요!' }[kind];
-    fingerDemo(h, txt, null, 2600);
+    fingerDemo(h, txt, null, 2600, true);
   }
   // 처음 해 봤을 때 칭찬 + 작은 코인 보상
   function praise(key, msg, coins) {
@@ -3271,7 +3282,7 @@ svg { display: block; }
     if (level === 16) for (let t = 0; t < 80 && !lineDemoFind(5); t++) newBoard(); // 무지개 시연용: 5개 한 줄
     goals.forEach(g => { if (g.k === 'i') g.n = grid.flat().filter(t => t && t.frozen).length; if (g.k === 'x') g.n = grid.flat().filter(t => t && t.crate && !t.pin).length; if (g.k === 'y') g.n = grid.flat().filter(t => t && t.yarn).length; if (g.k === 'k') g.n = grid.flat().filter(t => t && t.key).length; if (g.k === 'g') g.n = gooCount(); });
     updateHud(false);
-    showToast(level + '단계 · ' + TIER_NAME[tierOf(level)] + (level === ICE_LV[0] ? ' · 얼음 칸이 나왔어요!' : level === CRATE_LV[0] ? ' · 상자가 나왔어요!' : level === KEY_LV[0] ? ' · 열쇠 젤리를 맨 아래로 내려요!' : level === GOO_LV[0] ? ' · 얼룩이 나왔어요! 방치하면 번져요' : R * C > prevCells && grid.length ? ' · 보드가 커졌어요!' : ''));
+    showToast(level === GOO_LV[0] ? '처음으로 얼룩이 나왔어요!' : level + '단계 · ' + TIER_NAME[tierOf(level)] + (level === ICE_LV[0] ? ' · 얼음 칸이 나왔어요!' : level === CRATE_LV[0] ? ' · 상자가 나왔어요!' : level === KEY_LV[0] ? ' · 열쇠 젤리를 맨 아래로 내려요!' : R * C > prevCells && grid.length ? ' · 보드가 커졌어요!' : ''));
     scheduleHint();
     // 큰 안내창 대신: 1단계·3단계는 시작하자마자 손가락 시연, 나머지는 상황에 맞춰(ctxAfterMove) 짧은 말풍선으로 알려줘요
     if (pendingHeartTip && cover.hidden && lvEl.hidden) {
