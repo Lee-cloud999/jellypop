@@ -2925,14 +2925,15 @@ svg { display: block; }
     return { init, login, logout, askDelete, available, loggedIn, ui };
   })();
   function acctHtml() {
-    if (!Acct.available() && !IAP.available) return '';
+    const showRestore = !SHOP_CLOSED && IAP.available; // 상점이 열릴 때 구매 복원도 함께 나와요
+    if (!Acct.available() && !showRestore) return '';
     let h = '<div class="evhead" style="font-size:18px;margin-top:18px">계정</div><div class="acct">';
     if (Acct.available()) {
       h += Acct.loggedIn()
         ? '<div class="awho"><b>' + (save.acct.name || '로그인됨') + '</b><br>진행 상황이 계정에 저장돼요</div><button class="btn wide" type="button" data-s="logout" style="width:100%;min-height:48px;font-size:17px;justify-content:center">로그아웃</button>'
         : '<div class="awho"><b>게스트</b><br>로그인하면 기기를 바꿔도 이어서 할 수 있어요</div><button class="btn primary wide" type="button" data-s="login" style="width:100%;min-height:52px;font-size:18px;justify-content:center">구글 계정으로 로그인</button>';
     }
-    h += '<button class="btn wide" type="button" data-s="restore" style="width:100%;min-height:48px;font-size:17px;justify-content:center">구매 복원</button>';
+    if (!SHOP_CLOSED) h += '<button class="btn wide" type="button" data-s="restore" style="width:100%;min-height:48px;font-size:17px;justify-content:center">구매 복원</button>';
     if (Acct.available() && Acct.loggedIn()) h += '<button class="btn danger wide" type="button" data-s="delacct" style="width:100%;min-height:48px;font-size:17px;justify-content:center">계정 삭제</button>';
     return h + '</div>';
   }
