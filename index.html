@@ -2149,6 +2149,29 @@ svg { display: block; }
     if (!cover.hidden || !lvEl.hidden || !over.hidden || busy) { if (n < 25) setTimeout(() => startBombTut(n + 1), 600); return; } // 지도·다른 창이 닫힐 때까지 기다려요
     if (!save.bombTut) { save.bombTut = 1; persist(); showBombTutorial(); } else bombDemo();
   }
+  // 줄무늬(10)·무지개(16)·날개(WING_FROM) 만드는 법: 처음엔 설명창 → 손가락 시연, 이후엔 시연만
+  const LESSONS = {
+    stripe: { flag: 'tutStripe', title: '줄무늬 젤리 만들기', img: () => IMG[SPECIAL_IMG.row], body: '같은 색 <b>4개</b>를 한 줄로 맞추면<br><b>줄무늬 젤리</b>가 생겨요!<br>줄무늬는 옆 젤리와 바꾸면<br>한 줄이 쓱 터져요.', demo: () => lessonDemo(4) },
+    rainbow: { flag: 'tutRainbow', title: '무지개 젤리 만들기', img: () => RAINBOW_IMG || IMG[8], body: '같은 색 <b>5개</b>를 한 줄로 맞추면<br><b>무지개 젤리</b>가 생겨요!<br>무지개는 아무 젤리와 바꾸면<br>그 색이 모두 사라져요.', demo: () => lessonDemo(5) },
+    wing: { flag: 'tutWing', title: '날개 젤리 만들기', img: () => WING_IMG, body: '같은 색 <b>4개를 2×2</b>로 모으면<br><b>날개 젤리</b>가 생겨요!<br>눌러 쓰면 열쇠 아래의 젤리를 터뜨려서<br>열쇠를 내리는 데 큰 도움이 돼요.', demo: () => wingLesson() }
+  };
+  let curLesson = null;
+  function wingLesson() {
+    if (ended || busy || !cover.hidden || !lvEl.hidden || !over.hidden) return;
+    ctxShown.wingd = 1;
+    const h = wingDemoFind(), txt = '같은 색 <b>4개를 2×2</b>로 모으면<br><b>날개 젤리</b>가 생겨요!';
+    if (h) fingerDemo(h, txt, null, 6500); else plainBubble(txt, 7500);
+  }
+  function startLesson(k, n) {
+    n = n || 0;
+    const L = LESSONS[k]; if (!L || ended) return;
+    if (!cover.hidden || !lvEl.hidden || !over.hidden || busy) { if (n < 25) setTimeout(() => startLesson(k, n + 1), 600); return; }
+    if (!save[L.flag]) {
+      save[L.flag] = 1; persist(); curLesson = k; clearHint();
+      showOver('<h3>' + L.title + '</h3><img src="' + L.img() + '" alt="" style="width:84px;height:84px;object-fit:contain"><p>' + L.body + '</p>' +
+        '<div class="row"><button class="btn primary" type="button" data-act="lessonok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
+    } else L.demo();
+  }
   function showBombTutorial() {
     if (level !== 3 || ended) return;
     clearHint();
@@ -2297,7 +2320,7 @@ svg { display: block; }
         sh(k); save[flag] = 1; persist(); gimmickTip(k); break;
       }
     }
-    if (level === WING_FROM && madeMoves >= 3 && !ctxShown.wingd && !fingerOn) {
+    if (false && level === WING_FROM && madeMoves >= 3 && !ctxShown.wingd && !fingerOn) {
       sh('wingd');
       const h = wingDemoFind(), txt = '같은 색 <b>4개를 2×2</b>로 모으면<br><b>날개 젤리</b>가 생겨요!<br><small>눌러 쓰면 열쇠 아래의 젤리를 터뜨려서<br>열쇠를 내리는 데 큰 도움이 돼요</small>';
       if (h) fingerDemo(h, txt, null, 6500); else plainBubble(txt, 7500);
@@ -3030,7 +3053,8 @@ svg { display: block; }
     else if (act === 'shufok') { hideOver(); bShuffle.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'mvok') { hideOver(); bMoves.classList.add('tutglow'); if (!ended) scheduleHint(); }
     else if (act === 'hamok') { hideOver(); bHammer.classList.add('tutglow'); if (!ended) scheduleHint(); }
-    else if (act === 'heartok') { hideOver(); if (!ended) { scheduleHint(); if (level === 3) setTimeout(() => startBombTut(0), 500); } }
+    else if (act === 'heartok') { hideOver(); if (!ended) { scheduleHint(); if (level === 3) setTimeout(() => startBombTut(0), 500); else if (level === 10 || level === 16 || level === WING_FROM) setTimeout(() => startLesson(level === 10 ? 'stripe' : level === 16 ? 'rainbow' : 'wing', 0), 500); } }
+    else if (act === 'lessonok') { hideOver(); const L = LESSONS[curLesson]; if (!ended) { scheduleHint(); if (L) setTimeout(L.demo, 400); } }
     else if (act === 'bombok') { hideOver(); if (!ended) { scheduleHint(); setTimeout(bombDemo, 400); } }
     else if (act === 'iceok') { save.seenIce = 1; persist(); hideOver(); if (!ended) { scheduleHint(); setTimeout(() => gimmickDemo('ice'), 400); } }
     else if (act === 'heartwait') { delete over.dataset.noheart; hideOver(); openLevels(); }
@@ -3167,6 +3191,7 @@ svg { display: block; }
     if (level === 3) for (let t = 0; t < 60 && !bombDemoFind(); t++) newBoard(); // 시연할 T자 한 수가 있는 판으로
     if (level === 1) for (let t = 0; t < 40 && !(hintDir('v') && hintDir('h')); t++) newBoard(); // 시연할 세로·가로 한 수가 모두 있는 판으로
     if (level === 10) for (let t = 0; t < 60 && !lineDemoFind(4); t++) newBoard(); // 줄무늬 시연용: 4개 한 줄이 되는 한 수가 있는 판으로
+    if (level === WING_FROM) for (let t = 0; t < 80 && !wingDemoFind(); t++) newBoard();
     if (level === 16) for (let t = 0; t < 80 && !lineDemoFind(5); t++) newBoard(); // 무지개 시연용: 5개 한 줄
     goals.forEach(g => { if (g.k === 'i') g.n = grid.flat().filter(t => t && t.frozen).length; if (g.k === 'x') g.n = grid.flat().filter(t => t && t.crate && !t.pin).length; if (g.k === 'y') g.n = grid.flat().filter(t => t && t.yarn).length; if (g.k === 'k') g.n = grid.flat().filter(t => t && t.key).length; if (g.k === 'g') g.n = gooCount(); });
     updateHud(false);
@@ -3180,6 +3205,8 @@ svg { display: block; }
         '<div class="row"><button class="btn primary" type="button" data-act="heartok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
     } else if (level === 3) {
       setTimeout(() => startBombTut(0), 700);
+    } else if (level === 10 || level === 16 || level === WING_FROM) {
+      setTimeout(() => startLesson(level === 10 ? 'stripe' : level === 16 ? 'rainbow' : 'wing', 0), 700);
     } else if (cover.hidden && lvEl.hidden && over.hidden) {
       if (level === 1) setTimeout(() => showFinger('v'), 800);
       else if (level === 3) setTimeout(bombDemo, 900);
