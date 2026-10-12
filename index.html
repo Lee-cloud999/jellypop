@@ -2548,8 +2548,20 @@ svg { display: block; }
   async function useWing(t) {
     if (busy || ended || !over.hidden) return;
     busy = true; hideFinger(true); clearHint(); clearSel(); S('make');
+    moves--; madeMoves++; // 제자리에서 눌러도 이동 1번이 줄어요 (줄무늬·폭탄과 같아요)
+    updateHud(false);
+    const gooBefore = gooCount();
     await wingBurst([t]);
+    if (gooBefore > 0 && gooCount() < gooBefore) gooMiss = 0;
+    else if (gooBefore > 0) gooMiss++;
+    if (gooBefore > 0 && gooMiss >= 2 && !goalsMet() && moves > 0 && gooCount() < (cfg.gooN || 0) + 3) {
+      gooMiss = 0;
+      await spreadGoo();
+      if (!findHint()) { await shuffleBoard(); if (findRuns().length) await resolve(null); }
+    }
+    if (!goalsMet() && moves > 0 && tickTimers()) { await sleep(450); loseLevel('시한 젤리의 시간이 다 됐어요.', true); return; }
     endCheck();
+    if (!ended) setTimeout(ctxAfterMove, 350);
   }
 
   async function useLine(t) {
