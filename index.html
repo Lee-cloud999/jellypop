@@ -930,7 +930,7 @@ svg { display: block; }
   // ★ 테스트 도구: 시작 화면 아래의 '테스트 모드' 버튼을 누르면 켜지고, 다시 누르면 꺼져요 (이 기기에만 저장돼요).
   //   테스트 모드에서는 하트가 줄지 않고, 단계 지도에서 모든 단계를 골라 시작할 수 있어요.
   //   앱으로 올리기 전에는 TEST_TOOLS를 false로 바꾸세요. 그러면 버튼과 기능이 모두 없어져요.
-  const TEST_TOOLS = true;
+  const TEST_TOOLS = false;
   let testFlag = false; try { testFlag = localStorage.getItem('jellypop-test') === '1'; } catch (e) { /* ignore */ }
   const testOn = () => TEST_TOOLS && testFlag;
   function testUi() {
