@@ -2210,7 +2210,7 @@ svg { display: block; }
     if (level !== 3 || ended) return;
     clearHint();
     showOver('<h3>T자 맞추기</h3><img src="' + IMG[8] + '" alt="" style="width:84px;height:84px;object-fit:contain">' +
-      '<p>가로 3개와 세로 3개가 <b>T자나 L자</b>로 만나게 맞추면<br><b>폭탄 젤리</b>가 생겨요!<br>폭탄은 터질 때 주변을 넓게 없애요.</p>' +
+      '<p>가로 3개와 세로 3개가 <b>T자나 L자</b>로 만나게 맞추면<br><b>폭탄 젤리</b>가 생겨요!<br>폭탄은 <b>눌러서</b> 터뜨려요. 터질 때 주변을 넓게 없애요.</p>' +
       '<div class="row"><button class="btn primary" type="button" data-act="bombok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
   }
   /* ---------- 상황 맞춤 튜토리얼 (큰 창 없이 짧은 말풍선) ---------- */
@@ -3394,7 +3394,7 @@ svg { display: block; }
     const t = d.t;
     if (isFixed(t)) { nudge(t, 0, 0); return; }
     if (t.special === 'wing' && !(selected && selected !== t && adjacent(selected, t))) { clearSel(); useWing(t); return; } // 날개는 제자리에서 눌러도 쓰이고, 끌거나 옆 젤리를 이어 눌러 바꾸면 이동해요
-    if ((t.special === 'row' || t.special === 'col') && !(selected && selected !== t && adjacent(selected, t))) { useLine(t); return; } // 가로·세로 줄 젤리는 제자리에서 눌러도 터져요
+    if ((t.special === 'row' || t.special === 'col' || t.special === 'bomb') && !(selected && selected !== t && adjacent(selected, t))) { useLine(t); return; } // 줄·폭탄 젤리는 제자리에서 눌러도 터져요 (옆 젤리와 바꾸면 조합 효과)
     if (!selected) { selected = t; t.el.classList.add('sel'); S('tap'); }
     else if (selected === t) clearSel();
     else if (adjacent(selected, t)) { const s = selected; clearSel(); trySwap(s, t); }
