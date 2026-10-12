@@ -1393,7 +1393,7 @@ svg { display: block; }
       const kinds = SC.replace(/\d/g, '');
       if (kinds.length) {
         g.splice(1);
-        if (kinds.includes('i')) { iceN = pick([3, 4, 5, 7]); iceHp = n >= 18 ? 2 : 1; g.push({ k: 'i', n: iceN }); moves += 3 + (iceN - 3 > 2 ? 1 : 0); }
+        if (kinds.includes('i')) { iceN = pick([3, 4, 5, 7]); iceHp = n >= 20 ? 2 : 1; g.push({ k: 'i', n: iceN }); moves += 3 + (iceN - 3 > 2 ? 1 : 0); }
         if (kinds.includes('x')) { crateN = pick([2, 3, 3, 4]); g.push({ k: 'x', n: crateN }); moves += 2 + (crateN > 3 ? 1 : 0); }
         if (kinds.includes('g')) { gooN = pick([2, 3, 3, 4]); g.push({ k: 'g', n: gooN }); moves += 2 + (gooN > 3 ? 1 : 0); }
         if (kinds.includes('y')) { yarnN = pick([3, 4, 5, 6]); g.push({ k: 'y', n: yarnN }); moves += 3; }
@@ -1557,7 +1557,7 @@ svg { display: block; }
   };
   const obsSrc = k => OBSIMG[k] || ('data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' + OBSVG[k] + '</svg>'));
   // 6~50단계 기믹 일정: 새 기믹 → 연습 → 연습2 → 심화(숫자 1~4) → 섞어 쓰기. 글자: x 상자 · g 얼룩 · i 얼음 · k 열쇠 · y 털실, '-'는 장애물 없는 쉬어가는 단계
-  const SCHED = { 6: 'x1', 7: 'x2', 8: 'x3', 9: 'x4', 10: 'g1', 11: 'g2', 12: 'g3', 13: 'g4', 14: 'gx', 15: '-', 16: 'i1', 17: 'i2', 18: 'i3', 19: 'i4', 20: 'ix', 21: 'ig', 22: 'ix', 23: 'k1', 24: 'k2', 25: 'k3', 26: 'k4', 27: 'kx', 28: 'kg', 29: 'ki', 30: 'xi', 31: 'gk', 32: 'x3', 33: 'ig', 34: 'kx', 35: 'gi', 36: 'y1', 37: 'y2', 38: 'y3', 39: 'y4', 40: 'yx', 41: 'yg', 42: 'yi', 43: 'yk', 44: 'xi', 45: 'gk', 46: 'ig', 47: 'ki', 48: 'yx', 49: 'gx', 50: 'ix' };
+  const SCHED = { 6: 'i1', 7: 'i2', 8: 'i3', 9: 'i4', 10: 'g1', 11: 'g2', 12: 'g3', 13: 'g4', 14: 'gi', 15: '-', 16: 'x1', 17: 'x2', 18: 'x3', 19: 'x4', 20: 'ix', 21: 'ig', 22: 'ix', 23: 'k1', 24: 'k2', 25: 'k3', 26: 'k4', 27: 'kx', 28: 'kg', 29: 'ki', 30: 'xi', 31: 'gk', 32: 'x3', 33: 'ig', 34: 'kx', 35: 'gi', 36: 'y1', 37: 'y2', 38: 'y3', 39: 'y4', 40: 'yx', 41: 'yg', 42: 'yi', 43: 'yk', 44: 'xi', 45: 'gk', 46: 'ig', 47: 'ki', 48: 'yx', 49: 'gx', 50: 'ix' };
   const ICE_LV = [], CRATE_LV = [], YARN_LV = [], PIN_LV = [52, 54, 57, 59], TIMER_LV = [92, 94, 96, 98, 100], KEY_LV = [], GOO_LV = [];
   Object.keys(SCHED).map(Number).sort((x, y) => x - y).forEach(n => { const t = SCHED[n]; if (t.includes('i')) ICE_LV.push(n); if (t.includes('x')) CRATE_LV.push(n); if (t.includes('y')) YARN_LV.push(n); if (t.includes('k')) KEY_LV.push(n); if (t.includes('g')) GOO_LV.push(n); });
   // 51~100단계: 10단계마다 같은 흐름으로 장애물이 돌아가며 나와요 (상자·얼음·열쇠·얼룩, 마지막 칸은 얼음+상자)
