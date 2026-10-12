@@ -2516,7 +2516,7 @@ svg { display: block; }
     }
     return pick(all.filter(ok));
   }
-  // 날개 젤리(1~2개): 지금 자리의 위아래·양옆이 터지고, 날개는 목표에 도움이 되는 젤리로 날아가 그 위아래·양옆도 터져요
+  // 날개 젤리(1~2개): 지금 자리의 위아래·양옆이 터지고, 날개는 목표에 도움이 되는 젤리로 날아가 그 젤리 한 칸을 터뜨려요
   async function wingBurst(wings) {
     const vert = x => [grid[x.r - 1] && grid[x.r - 1][x.c], grid[x.r + 1] && grid[x.r + 1][x.c], grid[x.r][x.c - 1], grid[x.r][x.c + 1]].filter(y => y && !isFixed(y) && !y.key);
     const ex = new Set(wings);
@@ -2539,7 +2539,7 @@ svg { display: block; }
       fls.forEach(fl => fl.remove());
       plans.forEach(([w, tg]) => {
         FX.ring((tg.c + 0.5) * cell, (tg.r + 0.5) * cell, '#FFFFFF', cell * 1.8);
-        if (grid[tg.r] && grid[tg.r][tg.c] === tg) { ex.add(tg); vert(tg).forEach(x => ex.add(x)); }
+        if (grid[tg.r] && grid[tg.r][tg.c] === tg) ex.add(tg); // 도착한 자리에서는 그 젤리 한 칸만 터져요
       });
     } else await sleep(200);
     await resolve(null, [...ex]);
