@@ -2960,8 +2960,9 @@ svg { display: block; }
   $('cfNo').addEventListener('click', () => { S('click'); const f = cfOnNo; cfOnNo = null; cfOnYes = null; closeConfirm(); if (f) f(); });
   cfEl.addEventListener('click', e => { if (e.target === cfEl) closeConfirm(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !cfEl.hidden) closeConfirm(); });
-  $('cfYes').addEventListener('click', () => {
+  $('cfYes').addEventListener('click', async () => {
     if (cfOnYes) { const f = cfOnYes; cfOnYes = null; S('click'); closeConfirm(); f(); return; }
+    if (!(await Acct.clearCloud())) { closeConfirm(); showToast('초기화하지 못했어요. 인터넷을 확인하고 다시 해 주세요'); return; }
     resetting = true;
     try { localStorage.removeItem(STORE); } catch (e) { /* ignore */ }
     try { A.stopMusic(); } catch (e) { /* ignore */ }
@@ -3005,6 +3006,7 @@ svg { display: block; }
         signOut() { return auth.signOut(); },
         async load(uid) { const d = await db.doc('users/' + uid).get(); return d.exists ? d.data() : null; },
         store(uid, data) { return db.doc('users/' + uid).set(data); },
+        clear(uid) { return db.doc('users/' + uid).delete(); },
         async remove(uid) {
           await db.doc('users/' + uid).delete();
           try { await auth.currentUser.delete(); }
@@ -3064,11 +3066,17 @@ svg { display: block; }
       busyA = false;
     }
     async function logout() { try { await upload(); await prov.signOut(); } catch (e) { /* ignore */ } showToast('로그아웃했어요. 이 기기 진행은 그대로 남아요'); }
+    // 초기화할 때 클라우드 진행도 함께 지워요 (안 지우면 다시 켤 때 계정 진행이 되살아나요)
+    async function clearCloud() {
+      if (!prov || !loggedIn()) return true;
+      synced = false; clearTimeout(upT); upT = 0; // 지우는 동안 예전 진행이 다시 올라가지 않게 막아요
+      try { await prov.clear(save.acct.uid); return true; } catch (e) { return false; }
+    }
     function askDelete() {
       openConfirm({ title: '계정을 삭제할까요?', text: '계정과 클라우드에 저장된 진행 상황이 삭제돼요. 이 기기에 있는 진행은 그대로 남아요. 되돌릴 수 없어요.', yes: '계정 삭제', no: '취소',
         onYes: async () => { try { await prov.remove(save.acct.uid); delete save.acct; synced = false; persist(); ui(); showToast('계정을 삭제했어요'); } catch (e) { showToast('삭제하지 못했어요. 잠시 뒤 다시 해 주세요'); } } });
     }
-    return { init, login, logout, askDelete, available, loggedIn, ui };
+    return { init, login, logout, askDelete, clearCloud, available, loggedIn, ui };
   })();
   function acctHtml() {
     const showRestore = !SHOP_CLOSED && IAP.available; // 상점이 열릴 때 구매 복원도 함께 나와요
