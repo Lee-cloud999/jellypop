@@ -3118,6 +3118,12 @@ svg { display: block; }
       save.track = parseInt(b.dataset.n, 10); save.music = true; persist();
       A.startMusic(save.track); openSound(); return;
     }
+    if (act === 'ibuy') {
+      const it = SHOP.find(x => x.k === b.dataset.k);
+      if (it && save.coins >= it.cost * BUY_N) { save.coins -= it.cost * BUY_N; save[it.f] = (save[it.f] | 0) + BUY_N; persist(); S('coin'); updateHud(false); showToast(it.name + ' +' + BUY_N); }
+      hideOver(); if (!ended) scheduleHint(); return;
+    }
+    if (act === 'iclose') { hideOver(); if (!ended) scheduleHint(); return; }
     if (act === 'next') {
       if (level >= MAX_LEVEL) openLevels();
       else if (newChapterNext(level)) { if (typeof save.chSeen !== 'number') { save.chSeen = Math.ceil(level / 10); persist(); } hideOver(); openMap(); } // 새 챕터로 넘어갈 때는 털실 여행 창에서 털실 이동을 먼저 보여 줘요
@@ -4107,9 +4113,21 @@ svg { display: block; }
   window.addEventListener('resize', () => { if (!lvEl.hidden) { const t = lvEl.scrollTop; mapRender(false); lvEl.scrollTop = t; } });
 
   /* ---------- items ---------- */
+  // 아이템이 0개일 때: 코인으로 바로 살 수 있는 작은 창
+  const BUY_N = 3; // 한 번에 3개씩 (가격 = 개당 가격 × 3)
+  function openItemBuy(k) {
+    const it = SHOP.find(x => x.k === k); if (!it) return;
+    clearHint(); clearSel();
+    const cost = it.cost * BUY_N, can = save.coins >= cost;
+    showOver('<h3>' + it.name + ' 사기</h3>' + ic(it.ic, 84) + '<p>' + it.desc + '<br>아이템이 없어요! 한 번에 ' + BUY_N + '개씩 살 수 있어요.</p>' +
+      '<div class="coinline" style="font-size:20px">' + icoImg('coin', 22) + ' 보유 ' + fmt(save.coins) + '</div>' +
+      '<div class="row"><button class="btn primary wide" type="button" data-act="ibuy" data-k="' + k + '"' + (can ? '' : ' disabled') + ' style="min-height:54px;font-size:19px;justify-content:center">1개 사기 &nbsp;' + icoImg('coin', 22) + ' ' + it.cost + '</button></div>' +
+      (can ? '' : '<p class="starhint">코인이 부족해요. 단계를 클리어하면 코인을 받아요!</p>') +
+      '<div class="row"><button class="btn" type="button" data-act="iclose">닫기</button></div>');
+  }
   bHammer.addEventListener('click', () => {
     if (busy || ended || !over.hidden) return;
-    if (save.hammers <= 0) { openShop(); return; }
+    if (save.hammers <= 0) { openItemBuy('hammer'); return; }
     hammerMode = !hammerMode;
     S('click');
     clearSel(); clearHint();
@@ -4120,14 +4138,14 @@ svg { display: block; }
   });
   bMoves.addEventListener('click', () => {
     if (ended || !over.hidden) return;
-    if (save.mv <= 0) { if (!ended && !busy) openShop(); return; }
+    if (save.mv <= 0) { if (!ended && !busy) openItemBuy('mv'); return; }
     save.mv--; moves += 3; persist(); bMoves.classList.remove('tutglow'); hideItemTip(); praise('mv', '이동이 늘었어요!');
     S('coin');
     updateHud(false); showToast('이동 +3');
   });
   bShuffle.addEventListener('click', async () => {
     if (busy || ended || !over.hidden) return;
-    if (save.shuf <= 0) { openShop(); return; }
+    if (save.shuf <= 0) { openItemBuy('shuf'); return; }
     busy = true; hammerMode = false;
     field.classList.remove('hammering'); tip.hidden = true;
     clearHint(); clearSel();
