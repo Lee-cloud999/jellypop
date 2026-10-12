@@ -1541,7 +1541,7 @@ svg { display: block; }
     crate1: '<rect x="8" y="10" width="84" height="82" rx="14" fill="#E2B27A" stroke="#A8743A" stroke-width="5"/><path d="M18 36h64M18 64h64" stroke="#C98F52" stroke-width="5" stroke-linecap="round"/><rect x="44" y="10" width="12" height="82" fill="#F4D9B0" stroke="#A8743A" stroke-width="3"/><path d="M30 14l10 22-12 14 14 14-8 18M72 30l-12 10 10 12-8 14" fill="none" stroke="#6F4520" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'
   };
   const obsSrc = k => OBSIMG[k] || ('data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' + OBSVG[k] + '</svg>'));
-  const ICE_LV = [8, 10, 16, 19, 21, 22, 25, 28, 30, 33, 39, 45, 50], CRATE_LV = [7, 12, 13, 15, 18, 21, 24, 27, 29, 30, 31, 34, 41, 47, 50], YARN_LV = [36, 38, 42, 44, 48], PIN_LV = [52, 54, 57, 59], TIMER_LV = [92, 94, 96, 98, 100], KEY_LV = [9, 14, 17, 23, 32, 37, 43, 46], GOO_LV = [6, 11, 20, 26, 35, 40, 49];
+  const ICE_LV = [8, 10, 16, 19, 21, 22, 25, 28, 30, 33, 39, 45, 50], CRATE_LV = [6, 12, 13, 15, 18, 21, 24, 27, 29, 30, 31, 34, 41, 47, 50], YARN_LV = [36, 38, 42, 44, 48], PIN_LV = [52, 54, 57, 59], TIMER_LV = [92, 94, 96, 98, 100], KEY_LV = [9, 14, 17, 23, 32, 37, 43, 46], GOO_LV = [7, 11, 20, 26, 35, 40, 49];
   // 51~100단계: 10단계마다 같은 흐름으로 장애물이 돌아가며 나와요 (상자·얼음·열쇠·얼룩, 마지막 칸은 얼음+상자)
   for (let n = 51; n <= 100; n++) {
     const k = (n - 51) % 10;
@@ -2397,7 +2397,7 @@ svg { display: block; }
       bShuffle.classList.add('tutglow');
       itemTip(bShuffle, '맞출 곳이 안 보이면 <b>섞기</b>!<br>눌러서 젤리를 모두 섞어 보세요<br><small>(섞기 +1 선물 받았어요)</small>');
     } else if (madeMoves >= 1) {
-      const kinds = [['goo', cfg.gooN > 0, 'seenGooTut', 6], ['crate', cfg.crateN > 0, 'seenCrateTut', 7], ['ice', cfg.iceN > 0, 'seenIce', ICE_LV[0]], ['key', cfg.keyN > 0, 'seenKey', 14], ['yarn', cfg.yarnN > 0, 'seenYarn', YARN_LV[0]], ['pin', cfg.pinN > 0, 'seenPin', PIN_LV[0]], ['timer', cfg.timerN > 0, 'seenTimer', TIMER_LV[0]]];
+      const kinds = [['goo', cfg.gooN > 0, 'seenGooTut', 7], ['crate', cfg.crateN > 0, 'seenCrateTut', 6], ['ice', cfg.iceN > 0, 'seenIce', ICE_LV[0]], ['key', cfg.keyN > 0, 'seenKey', 14], ['yarn', cfg.yarnN > 0, 'seenYarn', YARN_LV[0]], ['pin', cfg.pinN > 0, 'seenPin', PIN_LV[0]], ['timer', cfg.timerN > 0, 'seenTimer', TIMER_LV[0]]];
       for (const [k, on, flag, first] of kinds) {
         if (!on || ctxShown[k]) continue;
         if (save[flag] && level !== first) continue;
@@ -2817,14 +2817,14 @@ svg { display: block; }
       '<div class="row"><button class="btn primary" type="button" data-act="shufok" style="min-height:52px;font-size:19px">알겠어요</button></div>');
   }
   function showGooTutorial() {
-    if ((save.seenGooTut && level !== 6) || ended || !cfg || !(cfg.gooN > 0)) return;
+    if ((save.seenGooTut && level !== 7) || ended || !cfg || !(cfg.gooN > 0)) return;
     clearHint();
     showOver('<h3>번지는 얼룩</h3><img src="' + obsSrc('goo0') + '" alt="" style="width:84px;height:84px;object-fit:contain">' +
       '<p>얼룩이 묻은 젤리는 움직일 수 없어요.<br>옆에서 젤리를 터뜨리거나, 얼룩 젤리까지 같은 색 3개를 맞추면 지워져요.<br>얼룩을 2번 연속 못 지우면 <b>옆 젤리로 번져요!</b></p>' +
       '<div class="row"><button class="btn primary" type="button" data-act="gooyes" style="min-height:52px;font-size:19px">알겠어요</button></div>');
   }
   function showCrateTutorial() {
-    if ((save.seenCrateTut && level !== 7) || ended || !cfg || !(cfg.crateN > 0)) return;
+    if ((save.seenCrateTut && level !== 6) || ended || !cfg || !(cfg.crateN > 0)) return;
     clearHint();
     showOver('<h3>나무 상자</h3><img src="' + obsSrc('crate0') + '" alt="" style="width:84px;height:84px;object-fit:contain">' +
       '<p>상자는 움직일 수 없어요.<br>바로 옆에서 젤리를 터뜨리면 상자가 맞아요.<br><b>2번 맞히면</b> 상자가 부서져요!</p>' +
